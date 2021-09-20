@@ -44,7 +44,7 @@ func NewRepl() *REPL {
 
 // Combines a slice of REPLs.
 func CombineRepls(repls []*REPL) (*REPL, error) {
-	if repls == nil{
+	if len(repls) == 0{
 		r := NewRepl()
 		return r, nil
 	}
