@@ -38,7 +38,7 @@ func (list *List) PushHead(value interface{}) *Link {
 	newLink := &Link{
 		value: value,
 	}
-	if list.head == nil{
+	if list.head == nil && list.tail == nil{
 		list.head = newLink
 		list.tail = newLink
 	}else{
@@ -54,7 +54,7 @@ func (list *List) PushTail(value interface{}) *Link {
 	newLink := &Link{
 		value: value,
 	}
-	if list.tail == nil{
+	if list.tail == nil && list.head == nil{
 		list.head = newLink
 		list.tail = newLink
 	}else{
