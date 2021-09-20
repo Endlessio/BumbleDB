@@ -130,7 +130,8 @@ func (link *Link) GetNext() *Link {
 // Remove this link from its list.
 func (link *Link) PopSelf() {
 	// it is head
-	if link.prev == nil {
+	if link == nil{
+	}else if link.prev == nil {
 		cur := link.next
 		link.list.head = cur
 		cur.prev = nil
