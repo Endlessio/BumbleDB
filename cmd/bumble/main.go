@@ -3,7 +3,7 @@ package main
 
 import (
 	//"flag"
-	// "fmt"
+	"fmt"
 
 	//config "github.com/brown-csci1270/db/pkg/config"
 	list "github.com/brown-csci1270/db/pkg/list"
@@ -13,10 +13,15 @@ import (
 // Start the database.
 func main() {
 	l := list.NewList()
+	fmt.Println(l)
 	l.PushHead(2)
-	l.PushTail(1)
-	l.PushHead(3)
-	// for element := l.PeekTail().GetList().PeekHead(); element != nil; element = element.value() {
-	// 	fmt.Println(element.value)
-	// }
+	fmt.Println(l.PeekHead().GetList(), l.PeekHead())
+	l.PushHead(5)
+	fmt.Println(l.PeekHead().GetList())
+	l.PushTail(3)
+	fmt.Println(l.PeekHead())
+	l.PeekHead().PopSelf()
+	for element := l.PeekHead(); element != nil; element = element.GetNext() {
+		fmt.Println(element.GetKey())
+	}
 }

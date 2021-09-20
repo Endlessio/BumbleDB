@@ -1,5 +1,6 @@
 package list
 
+
 // import (
 // 	"errors"
 // 	"fmt"
@@ -38,6 +39,7 @@ func (list *List) PushHead(value interface{}) *Link {
 	newLink := &Link{
 		value: value,
 	}
+	newLink.list = list
 	if list.head == nil && list.tail == nil{
 		list.head = newLink
 		list.tail = newLink
@@ -57,6 +59,7 @@ func (list *List) PushTail(value interface{}) *Link {
 	newLink := &Link{
 		value: value,
 	}
+	newLink.list = list
 	if list.tail == nil && list.head == nil{
 		list.head = newLink
 		list.tail = newLink
