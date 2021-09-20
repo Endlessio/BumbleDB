@@ -52,7 +52,7 @@ func CombineRepls(repls []*REPL) (*REPL, error) {
 	for index, element := range repls{
 		if index == 0{
 		}else{
-			for key, _ := range element.commands {
+			for key := range element.commands {
 				_, ok := cur.commands[key]
 				if ok {
 					return nil, errors.New("duplicated key in repls")

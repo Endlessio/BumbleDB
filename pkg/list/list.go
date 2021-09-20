@@ -40,7 +40,7 @@ func (list *List) PushHead(value interface{}) *Link {
 	}
 	if list.head == nil{
 		list.head = newLink
-		list.tail = newLink
+		// list.tail = newLink
 	}else{
 		newLink.next = list.head
 		list.head.prev = newLink
@@ -55,7 +55,7 @@ func (list *List) PushTail(value interface{}) *Link {
 		value: value,
 	}
 	if list.tail == nil{
-		list.head = newLink
+		// list.head = newLink
 		list.tail = newLink
 	}else{
 		newLink.prev = list.tail
