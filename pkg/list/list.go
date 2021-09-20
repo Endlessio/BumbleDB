@@ -60,13 +60,10 @@ func (list *List) PushTail(value interface{}) *Link {
 	if list.tail == nil{
 		list.head = newLink
 		list.tail = newLink
-		newLink.next = nil
-		newLink.prev = nil
 	}else{
 		newLink.prev = list.tail
 		list.tail.next = newLink
 		list.tail = newLink
-		newLink.next = nil
 	}
 	return newLink
 }
