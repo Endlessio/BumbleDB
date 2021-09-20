@@ -134,10 +134,20 @@ func (link *Link) PopSelf() {
 	if link == nil{
 	}else if link == link.list.head {
 		cur := link.next
-		link.list.head = cur
+		if cur != nil{
+			link.list.head = cur
+		}else{
+			link.list.head = nil
+			link.list.tail = nil
+		}
 	}else if link == link.list.tail {
 		cur := link.prev
-		link.list.tail = cur
+		if cur != nil{
+			link.list.tail = cur
+		}else{
+			link.list.head = nil
+			link.list.tail = nil
+		}
 	}else{
 		left := link.prev
 		right := link.next
