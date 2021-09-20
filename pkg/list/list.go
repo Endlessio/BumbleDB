@@ -89,6 +89,7 @@ func (list *List) Map(f func(*Link)) {
 	cur := list.head
 	for cur!=nil {
 		f(cur)
+		cur = cur.next
 	}
 }
 
