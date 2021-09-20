@@ -41,13 +41,10 @@ func (list *List) PushHead(value interface{}) *Link {
 	if list.head == nil{
 		list.head = newLink
 		list.tail = newLink
-		newLink.next = nil
-		newLink.prev = nil
 	}else{
 		newLink.next = list.head
 		list.head.prev = newLink
 		list.head = newLink
-		newLink.prev = nil
 	}
 	return newLink
 }
