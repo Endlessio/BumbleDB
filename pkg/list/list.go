@@ -132,12 +132,12 @@ func (link *Link) GetNext() *Link {
 func (link *Link) PopSelf() {
 	// it is head
 	if link == nil{
-	}else if link.prev == nil {
+	}else if link == link.list.head {
 		cur := link.next
 		link.list.head = cur
 		cur.prev = nil
 		link.next = nil
-	}else if link.next == nil {
+	}else if link == link.list.tail {
 		cur := link.prev
 		link.list.tail = cur
 		cur.next = nil
