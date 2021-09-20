@@ -1,13 +1,13 @@
 package list
 
-import (
-	"errors"
-	"fmt"
-	"io"
-	"strings"
+// import (
+// 	"errors"
+// 	"fmt"
+// 	"io"
+// 	"strings"
 
-	repl "github.com/brown-csci1270/db/pkg/repl"
-)
+// 	repl "github.com/brown-csci1270/db/pkg/repl"
+// )
 
 // List struct.
 type List struct {
@@ -17,40 +17,82 @@ type List struct {
 
 // Create a new list.
 func NewList() *List {
-	panic("function not yet implemented");
+	list := new(List)
+	list.head = nil
+	list.tail = nil
+	return list
 }
 
 // Get a pointer to the head of the list.
 func (list *List) PeekHead() *Link {
-	panic("function not yet implemented");
+	return list.head
 }
 
 // Get a pointer to the tail of the list.
 func (list *List) PeekTail() *Link {
-	panic("function not yet implemented");
+	return list.tail
 }
 
 // Add an element to the start of the list. Returns the added link.
 func (list *List) PushHead(value interface{}) *Link {
-	panic("function not yet implemented");
+	newLink := &Link{
+		value: value,
+	}
+	if list.head == nil{
+		list.head = newLink
+		list.tail = newLink
+		newLink.next = nil
+		newLink.prev = nil
+	}else{
+		newLink.next = list.head
+		list.head.prev = newLink
+		list.head = newLink
+		newLink.prev = nil
+	}
+	return newLink
 }
 
 // Add an element to the end of the list. Returns the added link.
 func (list *List) PushTail(value interface{}) *Link {
-	panic("function not yet implemented");
+	newLink := &Link{
+		value: value,
+	}
+	if list.tail == nil{
+		list.head = newLink
+		list.tail = newLink
+		newLink.next = nil
+		newLink.prev = nil
+	}else{
+		newLink.prev = list.tail
+		list.tail.next = newLink
+		list.tail = newLink
+		newLink.next = nil
+	}
+	return newLink
 }
 
 // Find an element in a list given a boolean function, f, that evaluates to true on the desired element.
 func (list *List) Find(f func(*Link) bool) *Link {
-	panic("function not yet implemented");
+	cur := list.head
+	for cur!=nil {
+		if f(cur) {
+			return cur
+		}else{
+			cur = cur.next
+		}
+	}
+	return nil
 }
 
 // Apply a function to every element in the list. f should alter Link in place.
 func (list *List) Map(f func(*Link)) {
-	panic("function not yet implemented");
+	cur := list.head
+	for cur!=nil {
+		f(cur)
+	}
 }
 
-// Link struct.
+// Link struct. ie Node
 type Link struct {
 	list  *List
 	prev  *Link
@@ -60,35 +102,55 @@ type Link struct {
 
 // Get the list that this link is a part of.
 func (link *Link) GetList() *List {
-	panic("function not yet implemented");
+	return link.list
 }
 
 // Get the link's value.
 func (link *Link) GetKey() interface{} {
-	panic("function not yet implemented");
+	return link.value
 }
 
 // Set the link's value.
 func (link *Link) SetKey(value interface{}) {
-	panic("function not yet implemented");
+	link.value = value
 }
 
 // Get the link's prev.
 func (link *Link) GetPrev() *Link {
-	panic("function not yet implemented");
+	res := link.prev
+	return res
 }
 
 // Get the link's next.
 func (link *Link) GetNext() *Link {
-	panic("function not yet implemented");
+	res := link.next
+	return res
 }
 
 // Remove this link from its list.
 func (link *Link) PopSelf() {
-	panic("function not yet implemented");
+	// it is head
+	if link.prev == nil {
+		cur := link.next
+		link.list.head = cur
+		cur.prev = nil
+		link.next = nil
+	}else if link.next == nil {
+		cur := link.prev
+		link.list.tail = cur
+		cur.next = nil
+		link.prev = nil
+	}else{
+		left := link.prev
+		right := link.next
+		left.next = right
+		right.prev = left
+		link.next = nil
+		link.prev = nil
+	}
 }
 
-// List REPL.
-func ListRepl(list *List) *repl.REPL {
-	panic("function not yet implemented");
-}
+// // List REPL.
+// func ListRepl(list *List) *repl.REPL {
+// 	panic("function not yet implemented");
+// }

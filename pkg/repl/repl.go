@@ -36,12 +36,35 @@ func (replConfig *REPLConfig) GetAddr() uuid.UUID {
 
 // Construct an empty REPL.
 func NewRepl() *REPL {
-	panic("function not yet implemented");
+	r := new(REPL)
+	r.commands = nil
+	r.help = nil
+	return r
 }
 
 // Combines a slice of REPLs.
 func CombineRepls(repls []*REPL) (*REPL, error) {
-	panic("function not yet implemented");
+	if repls == nil{
+		r := NewRepl()
+		return r, errors.New("empty repls")
+	}
+	cur := repls[0]
+	for index, element := range repls{
+		if index == 0{
+		}else{
+			for key, _ := range element.commands {
+				_, ok := cur.commands[key]
+				if ok {
+					return nil, errors.New("duplicated key in repls")
+
+				}else{
+					cur.commands[key] = element.commands[key]
+					cur.help[key] = element.help[key]
+				}
+			}
+		}
+	}
+	return cur, nil
 }
 
 // Get commands.
@@ -56,12 +79,17 @@ func (r *REPL) GetHelp() map[string]string {
 
 // Add a command, along with its help string, to the set of commands.
 func (r *REPL) AddCommand(trigger string, action func(string, *REPLConfig) error, help string) {
-	panic("function not yet implemented");
+	r.commands[trigger] = action
+	r.help[trigger] = help
 }
 
 // Return all REPL usage information as a string.
 func (r *REPL) HelpString() string {
-	panic("function not yet implemented");
+	res := ""
+	for _, ele := range r.help{
+		res += ele
+	}
+	return res
 }
 
 // Run the REPL.
@@ -79,7 +107,16 @@ func (r *REPL) Run(c net.Conn, clientId uuid.UUID, prompt string) {
 	scanner := bufio.NewScanner((reader))
 	replConfig := &REPLConfig{writer: writer, clientId: clientId}
 	// Begin the repl loop!
-	panic("function not yet implemented");
+	for scanner.Scan() {
+		// clean user input here scanner.Text()
+		io.WriteString(writer, prompt)
+		cur := scanner.Text()
+		handler := r.commands[cur]
+		handler(cur, replConfig)
+		
+
+		// after get command, go find action in map
+	}
 }
 
 // cleanInput preprocesses input to the db repl.
