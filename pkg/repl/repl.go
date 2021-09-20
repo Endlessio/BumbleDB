@@ -37,8 +37,8 @@ func (replConfig *REPLConfig) GetAddr() uuid.UUID {
 // Construct an empty REPL.
 func NewRepl() *REPL {
 	r := new(REPL)
-	r.commands = nil
-	r.help = nil
+	r.commands = make(map[string]func(string, *REPLConfig) error)
+	r.help = make(map[string]string)
 	return r
 }
 
