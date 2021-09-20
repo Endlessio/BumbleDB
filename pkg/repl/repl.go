@@ -3,11 +3,11 @@ package repl
 import (
 	"bufio"
 	"errors"
-	"fmt"
+	// "fmt"
 	"io"
 	"net"
 	"os"
-	"strings"
+	// "strings"
 
 	uuid "github.com/google/uuid"
 )
@@ -113,7 +113,7 @@ func (r *REPL) Run(c net.Conn, clientId uuid.UUID, prompt string) {
 		cur := scanner.Text()
 		handler := r.commands[cur]
 		handler(cur, replConfig)
-		
+
 
 		// after get command, go find action in map
 	}

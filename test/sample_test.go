@@ -1,7 +1,7 @@
 package test
 
 import (
-	"fmt"
+	// "fmt"
 	"testing"
 
 	list "github.com/brown-csci1270/db/pkg/list"
