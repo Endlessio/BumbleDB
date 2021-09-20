@@ -46,7 +46,7 @@ func NewRepl() *REPL {
 func CombineRepls(repls []*REPL) (*REPL, error) {
 	if repls == nil{
 		r := NewRepl()
-		return r, errors.New("empty repls")
+		return r, nil
 	}
 	cur := repls[0]
 	for index, element := range repls{
