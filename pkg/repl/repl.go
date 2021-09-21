@@ -118,6 +118,6 @@ func (r *REPL) Run(c net.Conn, clientId uuid.UUID, prompt string) {
 }
 
 // cleanInput preprocesses input to the db repl.
-func cleanInput(text string) string {
-	panic("function not yet implemented");
-}
+// func cleanInput(text string) string {
+// 	panic("function not yet implemented");
+// }

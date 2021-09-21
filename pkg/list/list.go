@@ -1,14 +1,14 @@
 package list
 
 
-// import (
-// 	"errors"
-// 	"fmt"
-// 	"io"
-// 	"strings"
+import (
+	"errors"
+	"fmt"
+	"io"
+	"strings"
 
-// 	repl "github.com/brown-csci1270/db/pkg/repl"
-// )
+	repl "github.com/brown-csci1270/db/pkg/repl"
+)
 
 // List struct.
 type List struct {
@@ -159,7 +159,74 @@ func (link *Link) PopSelf() {
 	}
 }
 
-// // List REPL.
-// func ListRepl(list *List) *repl.REPL {
-// 	panic("function not yet implemented");
-// }
+// List REPL.
+func ListRepl(list *List) *repl.REPL {
+	user := repl.NewRepl()
+	list_print := func(str string, none *repl.REPLConfig) error{
+		res := ""
+		for i := list.head.next; i.next != nil; i = i.next{
+			temp, ok := i.value.(string)
+			if ok{
+				res += temp+","
+			}else{
+				errors.New("the input is int, cannot cast to string by .string()")
+			}
+		}
+		if res == ""{
+			errors.New("empty list")
+		}
+		return errors.New(res)
+	}
+
+	list_push_head := func(str string, none *repl.REPLConfig) error{
+		splitted := strings.Split(str, " ")
+		element := splitted[1]
+		list.PushHead(element)
+		return errors.New("the element has been pushed to head")
+	}
+
+
+	list_push_tail := func(str string, none *repl.REPLConfig) error{
+		splitted := strings.Split(str, " ")
+		element := splitted[1]
+		list.PushTail(element)
+		return errors.New("the element has been pushed to tail")
+	}
+
+	list_remove := func(str string, none *repl.REPLConfig) error{
+		splitted := strings.Split(str, " ")
+		element := splitted[1]
+		for i := list.head.next; i.next != nil; i = i.next{
+			temp, ok := i.value.(string)
+			if ok{
+				if temp == element{
+					i.PopSelf()
+				}
+			}
+		}
+		return errors.New("the element has been pushed to head")
+	}
+
+	list_contains := func(str string, none *repl.REPLConfig) error{
+		splitted := strings.Split(str, " ")
+		element := splitted[1]
+		for i := list.head.next; i.next != nil; i = i.next{
+			temp, ok := i.value.(string)
+			if ok{
+				if temp == element{
+					fmt.Println("found!")
+				}
+			}
+		}
+		fmt.Println("not found!")
+		return errors.New("the list_contains has been exe")
+		
+	}
+
+	user.AddCommand("list_print", list_print, "Prints out all of the elements in the list in order, separated by commas")
+	user.AddCommand("list_push_head", list_push_head, "Inserts the given element to the List as a string.")
+	user.AddCommand("list_push_tail", list_push_tail, "Inserts the given element to the end of the List as a string")
+	user.AddCommand("list_remove", list_remove, "Removes the given element from the list.")
+	user.AddCommand("list_contains", list_contains, "Prints \"found!\" if the element is in the list, prints \"not found\" otherwise.")
+	return user
+}
