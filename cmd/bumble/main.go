@@ -5,7 +5,7 @@ import (
 	//"flag"
 	"fmt"
 
-	config "github.com/brown-csci1270/db/pkg/config"
+	// config "github.com/brown-csci1270/db/pkg/config"
 	list "github.com/brown-csci1270/db/pkg/list"
 	repl "github.com/brown-csci1270/db/pkg/repl"
 )

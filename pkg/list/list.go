@@ -4,7 +4,7 @@ package list
 import (
 	"errors"
 	"fmt"
-	"io"
+	// "io"
 	"strings"
 
 	repl "github.com/brown-csci1270/db/pkg/repl"
