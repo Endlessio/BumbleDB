@@ -2,26 +2,41 @@
 package main
 
 import (
-	//"flag"
-	"fmt"
+	"flag"
+	// "fmt"
 
-	// config "github.com/brown-csci1270/db/pkg/config"
+	uuid "github.com/google/uuid"
+	config "github.com/brown-csci1270/db/pkg/config"
 	list "github.com/brown-csci1270/db/pkg/list"
-	repl "github.com/brown-csci1270/db/pkg/repl"
+	// repl "github.com/brown-csci1270/db/pkg/repl"
 )
+
+var (
+	_list bool
+	_c bool
+)
+
+func init() {
+	flag.BoolVar(&_list, "list", false, "bool flag value")
+	flag.BoolVar(&_c, "c", false, "bool flag value")
+  }
 
 // Start the database.
 func main() {
+	flag.Parse()
+
 	l := list.NewList()
-	fmt.Println(l)
 	l.PushHead(2)
-	fmt.Println(l.PeekHead().GetList(), l.PeekHead())
 	l.PushHead(5)
-	fmt.Println(l.PeekHead().GetList())
 	l.PushTail(3)
-	fmt.Println(l.PeekHead())
 	l.PeekHead().PopSelf()
-	for element := l.PeekHead(); element != nil; element = element.GetNext() {
-		fmt.Println(element.GetKey())
+
+	// r := repl.NewRepl()
+
+	prompt := config.GetPrompt(_c)
+
+	uuid := uuid.New()
+	if _list{
+		list.ListRepl(l).Run(nil, uuid, prompt)
 	}
 }

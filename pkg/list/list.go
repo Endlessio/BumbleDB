@@ -1,11 +1,12 @@
 package list
 
-
 import (
 	"errors"
 	"fmt"
+
 	// "io"
 	"strings"
+	"strconv"
 
 	repl "github.com/brown-csci1270/db/pkg/repl"
 )
@@ -162,19 +163,25 @@ func (link *Link) PopSelf() {
 // List REPL.
 func ListRepl(list *List) *repl.REPL {
 	user := repl.NewRepl()
+
 	list_print := func(str string, none *repl.REPLConfig) error{
 		res := ""
-		for i := list.head.next; i.next != nil; i = i.next{
-			temp, ok := i.value.(string)
-			if ok{
-				res += temp+","
-			}else{
-				errors.New("the input is int, cannot cast to string by .string()")
+		cur := list.head
+		for cur!=nil{
+			temp := cur.value
+			switch temp.(type){
+				case int:
+					temp = strconv.Itoa(temp.(int))
+				default:
+					temp = temp.(string)
 			}
+			res += temp.(string)+","
+			cur = cur.next
 		}
 		if res == ""{
-			errors.New("empty list")
+			fmt.Println(errors.New("empty list"))
 		}
+		fmt.Println(res)
 		return errors.New(res)
 	}
 
@@ -196,31 +203,45 @@ func ListRepl(list *List) *repl.REPL {
 	list_remove := func(str string, none *repl.REPLConfig) error{
 		splitted := strings.Split(str, " ")
 		element := splitted[1]
-		for i := list.head.next; i.next != nil; i = i.next{
-			temp, ok := i.value.(string)
-			if ok{
-				if temp == element{
-					i.PopSelf()
-				}
+		cur := list.head
+		for cur!=nil{
+			temp := cur.value
+			switch temp.(type){
+				case int:
+					temp = strconv.Itoa(temp.(int))
+				default:
+					temp = temp.(string)
 			}
+			if temp.(string) == element{
+				cur.PopSelf()
+				return errors.New("the element has been removed")
+			}
+			cur = cur.next
 		}
-		return errors.New("the element has been pushed to head")
+		fmt.Println("the element not existed")
+		return errors.New("the element not existed")
 	}
 
 	list_contains := func(str string, none *repl.REPLConfig) error{
 		splitted := strings.Split(str, " ")
 		element := splitted[1]
-		for i := list.head.next; i.next != nil; i = i.next{
-			temp, ok := i.value.(string)
-			if ok{
-				if temp == element{
-					fmt.Println("found!")
-				}
+		cur := list.head
+		for cur!=nil{
+			temp := cur.value
+			switch temp.(type){
+				case int:
+					temp = strconv.Itoa(temp.(int))
+				default:
+					temp = temp.(string)
 			}
+			if temp.(string) == element{
+				fmt.Println("found!")
+				return errors.New("the list_contains has been exe")
+			}
+			cur = cur.next
 		}
 		fmt.Println("not found!")
 		return errors.New("the list_contains has been exe")
-		
 	}
 
 	user.AddCommand("list_print", list_print, "Prints out all of the elements in the list in order, separated by commas")

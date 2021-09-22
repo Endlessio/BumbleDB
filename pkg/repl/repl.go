@@ -3,11 +3,17 @@ package repl
 import (
 	"bufio"
 	"errors"
+	"fmt"
+
 	// "fmt"
+
+	// "fmt"
+
 	"io"
 	"net"
 	"os"
-	// "strings"
+
+	"strings"
 
 	uuid "github.com/google/uuid"
 )
@@ -104,15 +110,21 @@ func (r *REPL) Run(c net.Conn, clientId uuid.UUID, prompt string) {
 		reader = c
 		writer = c
 	}
-	scanner := bufio.NewScanner((reader))
+	scanner := bufio.NewScanner(reader)
 	replConfig := &REPLConfig{writer: writer, clientId: clientId}
 	// Begin the repl loop!
 	for scanner.Scan() {
 		// clean user input here scanner.Text()
-		io.WriteString(writer, prompt)
 		cur := scanner.Text()
-		handler := r.commands[cur]
-		handler(cur, replConfig)
+		splited_cur := strings.Split(cur, " ")
+		pass := splited_cur[0]
+		io.WriteString(writer, prompt)
+		handler, ok := r.commands[pass]
+		if ok{
+			handler(cur, replConfig)
+		}else{
+			fmt.Println(errors.New("the key not in the map"))
+		}
 		// after get command, go find action in map
 	}
 }
