@@ -141,6 +141,8 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		cur_page.pinCount = 1
 		cur_page.pagenum = pagenum
 		pager.pinnedList.PushTail(&cur_page)
+		pager.nPages = 0
+		pager.pageTable[pagenum] = cur
 		return cur_page, nil
 	}else{
 		cur_unpin := pager.unpinnedList.PeekHead()
@@ -148,8 +150,10 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
 			pager.unpinnedList.PeekHead().PopSelf()
 			cur_unpin_page.pinCount = 1
+			pager.nPages = 0
 			cur_unpin_page.pagenum = pagenum
 			pager.pinnedList.PushTail(&cur_unpin_page)
+			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
 		}else{
 			return nil, errors.New("NewPage: only pinned page is available")
@@ -159,15 +163,48 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
-	panic("get page function not yet implemented");
+	if pagenum>pager.nPages{
+		return nil, errors.New("GetPage: invalid pagenum")
+	}
+	if page, ok := pager.pageTable[pagenum]; ok {
+		found := pager.unpinnedList.Find(func(l *list.Link) bool { return l.GetKey() == pagenum })
+		cur_page := page.GetKey().(*Page)
+		if found != nil{
+			cur_page.pinCount = 1
+		}
+		pager.ReadPageFromDisk(cur_page, pagenum)
+		return cur_page, nil
+	}else{
+		new_page, check := pager.NewPage(pagenum)
+		if check != nil{
+			return new_page, nil
+		}
+	}
+	return nil, nil
 }
 
 // Flush a particular page to disk.
 func (pager *Pager) FlushPage(page *Page) {
-	panic("flush page function not yet implemented");
+	pagenum := page.pagenum
+	is_dirty := page.dirty
+	cur_page, ok := pager.pageTable[pagenum]
+	if ok && is_dirty {
+		cur_page := cur_page.GetKey().(*Page)
+		page_data := cur_page.data
+		pager.file.WriteAt(page_data, pagenum*int64(PAGESIZE))
+	}
 }
 
 // Flushes all dirty pages.
 func (pager *Pager) FlushAllPages() {
-	panic("flush all page function not yet implemented");
+	pin_l := pager.pinnedList
+	pin_l.Map(func(l *list.Link) {
+		cur_page := l.GetKey().(*Page)
+		pager.FlushPage(cur_page)
+	})
+	unpin_l := pager.unpinnedList
+	unpin_l.Map(func(l *list.Link) {
+		cur_page := l.GetKey().(*Page)
+		pager.FlushPage(cur_page)
+	})
 }
