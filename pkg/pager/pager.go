@@ -146,7 +146,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// init amount of page
-		pager.nPages = 0
+		pager.nPages += 1
 		// update pagetable
 		pager.pageTable[pagenum] = cur
 		// return
@@ -164,7 +164,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// init amount of page
-			pager.nPages = 0
+			pager.nPages += 1
 			// update pagetable
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
@@ -198,15 +198,11 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			}
 			// update pinCount
 			cur_page.pinCount += 1 
-			pager.ReadPageFromDisk(cur_page, pagenum)
-			return cur_page, nil
-		}else{
-			return nil, errors.New("GetPage: it is actively be used")
 		}
 		// TODO might need to increase pinCount
 		// cur_page.pinCount += 1 
-		// pager.ReadPageFromDisk(cur_page, pagenum)
-		// return cur_page, nil
+		pager.ReadPageFromDisk(cur_page, pagenum)
+		return cur_page, nil
 	}else{
 		new_page, _ := pager.NewPage(pagenum)
 		if new_page != nil{
@@ -235,8 +231,9 @@ func (pager *Pager) FlushPage(page *Page) {
 		page.dirty = false
 		// pop the current page whenever it is
 		cur.PopSelf()
-		// push it into unpinned list
+		// push it into free list
 		pager.freeList.PushTail(&cur_page)
+		
 	}
 }
 
