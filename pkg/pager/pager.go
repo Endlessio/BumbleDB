@@ -159,15 +159,15 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
-	panic("function not yet implemented");
+	panic("get page function not yet implemented");
 }
 
 // Flush a particular page to disk.
 func (pager *Pager) FlushPage(page *Page) {
-	panic("function not yet implemented");
+	panic("flush page function not yet implemented");
 }
 
 // Flushes all dirty pages.
 func (pager *Pager) FlushAllPages() {
-	panic("function not yet implemented");
+	panic("flush all page function not yet implemented");
 }
