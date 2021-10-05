@@ -197,10 +197,10 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				pager.pinnedList.PushTail(&cur_page)
 			}
 			// update pinCount
-			// cur_page.pinCount += 1 
+			cur_page.pinCount += 1 
 		}
 		// TODO might need to increase pinCount
-		cur_page.pinCount += 1 
+		// cur_page.pinCount += 1 
 		pager.ReadPageFromDisk(cur_page, pagenum)
 		return cur_page, nil
 	}else{
