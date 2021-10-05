@@ -201,6 +201,7 @@ func (pager *Pager) FlushPage(page *Page) {
 		pager.file.WriteAt(*page_data, pagenum*int64(PAGESIZE))
 		page.pinCount = 0
 		page.dirty = false
+		pager.pinnedList.PushTail(&cur_page)
 	}
 }
 
