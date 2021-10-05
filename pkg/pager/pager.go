@@ -142,11 +142,11 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// pop the page from freelist
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
-		cur_page.pinCount += 1
+		cur_page.pinCount = 0
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// add the page into pinnedlist
-		pager.pinnedList.PushTail(&cur_page)
+		// pager.pinnedList.PushTail(&cur_page)
 		// init amount of page
 		pager.nPages = 0
 		// update pagetable
@@ -162,13 +162,13 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
-			cur_unpin_page.pinCount += 1
+			cur_unpin_page.pinCount =0
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// init amount of page
 			pager.nPages = 0
 			// add the page into pinnedlist
-			pager.pinnedList.PushTail(&cur_unpin_page)
+			// pager.pinnedList.PushTail(&cur_unpin_page)
 			// update pagetable
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
