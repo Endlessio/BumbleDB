@@ -205,7 +205,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		return cur_page, nil
 	}else{
 		new_page, check := pager.NewPage(pagenum)
-		if check != nil{
+		if new_page != nil{
 			return new_page, nil
 		}
 	}
