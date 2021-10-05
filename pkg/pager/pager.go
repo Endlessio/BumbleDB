@@ -145,8 +145,6 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		cur_page.pinCount = 0
 		// update pagenum
 		cur_page.pagenum = pagenum
-		// add the page into pinnedlist
-		// pager.pinnedList.PushTail(&cur_page)
 		// init amount of page
 		pager.nPages = 0
 		// update pagetable
@@ -167,8 +165,6 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			cur_unpin_page.pagenum = pagenum
 			// init amount of page
 			pager.nPages = 0
-			// add the page into pinnedlist
-			// pager.pinnedList.PushTail(&cur_unpin_page)
 			// update pagetable
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
@@ -201,9 +197,10 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				pager.pinnedList.PushTail(&cur_page)
 			}
 			// update pinCount
-			cur_page.pinCount += 1 
+			// cur_page.pinCount += 1 
 		}
 		// TODO might need to increase pinCount
+		cur_page.pinCount += 1 
 		pager.ReadPageFromDisk(cur_page, pagenum)
 		return cur_page, nil
 	}else{
