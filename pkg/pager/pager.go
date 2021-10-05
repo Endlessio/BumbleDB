@@ -138,9 +138,9 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 	if cur != nil{
 		cur_page := cur.GetKey().(*Page)
 		pager.freeList.PeekHead().PopSelf()
-		cur_page.pinCount = 1
+		// cur_page.pinCount = 1
 		cur_page.pagenum = pagenum
-		pager.pinnedList.PushTail(&cur_page)
+		// pager.pinnedList.PushTail(&cur_page)
 		pager.nPages = 0
 		pager.pageTable[pagenum] = cur
 		return cur_page, nil
@@ -149,10 +149,10 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if cur_unpin != nil{
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
 			pager.unpinnedList.PeekHead().PopSelf()
-			cur_unpin_page.pinCount = 1
+			// cur_unpin_page.pinCount = 1
 			pager.nPages = 0
 			cur_unpin_page.pagenum = pagenum
-			pager.pinnedList.PushTail(&cur_unpin_page)
+			// pager.pinnedList.PushTail(&cur_unpin_page)
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
 		}else{
@@ -167,10 +167,17 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		return nil, errors.New("GetPage: invalid pagenum")
 	}
 	if page, ok := pager.pageTable[pagenum]; ok {
-		found := pager.unpinnedList.Find(func(l *list.Link) bool { return l.GetKey() == pagenum })
+		found := pager.unpinnedList.Find(func(l *list.Link) bool { 
+			if l.GetKey() == pagenum{
+				l.PopSelf()
+				return true
+			}
+			return false
+		})
 		cur_page := page.GetKey().(*Page)
 		if found != nil{
-			cur_page.pinCount = 1
+			cur_page.pinCount += 1 
+			pager.pinnedList.PushTail(&cur_page)
 		}
 		pager.ReadPageFromDisk(cur_page, pagenum)
 		return cur_page, nil
