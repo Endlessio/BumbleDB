@@ -134,25 +134,42 @@ func (pager *Pager) ReadPageFromDisk(page *Page, pagenum int64) error {
 // NewPage returns an unused buffer from the free or unpinned list
 // the ptMtx should be locked on entry
 func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
+	// 如果freelist有空
 	cur := pager.freeList.PeekHead()
 	if cur != nil{
+		// get current page
 		cur_page := cur.GetKey().(*Page)
+		// pop the page from freelist
 		pager.freeList.PeekHead().PopSelf()
+		// add pinCount
 		cur_page.pinCount += 1
+		// update pagenum
 		cur_page.pagenum = pagenum
-		// pager.pinnedList.PushTail(&cur_page)
+		// add the page into pinnedlist
+		pager.pinnedList.PushTail(&cur_page)
+		// init amount of page
 		pager.nPages = 0
+		// update pagetable
 		pager.pageTable[pagenum] = cur
+		// return
 		return cur_page, nil
 	}else{
+		// 如果unpinnedlist有空
 		cur_unpin := pager.unpinnedList.PeekHead()
 		if cur_unpin != nil{
+			// get current page
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
+			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
+			// add pinCount
 			cur_unpin_page.pinCount += 1
-			pager.nPages = 0
+			// update pagenum
 			cur_unpin_page.pagenum = pagenum
-			// pager.pinnedList.PushTail(&cur_unpin_page)
+			// init amount of page
+			pager.nPages = 0
+			// add the page into pinnedlist
+			pager.pinnedList.PushTail(&cur_unpin_page)
+			// update pagetable
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
 		}else{
@@ -163,22 +180,30 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
+	// check invalid
 	if pagenum>pager.nPages{
 		return nil, errors.New("GetPage: invalid pagenum")
 	}
+	// if the page in the map
 	if page, ok := pager.pageTable[pagenum]; ok {
-		found := pager.unpinnedList.Find(func(l *list.Link) bool { 
-			if l.GetKey() == pagenum{
-				l.PopSelf()
-				return true
-			}
-			return false
-		})
+		// get the current page
 		cur_page := page.GetKey().(*Page)
+		// check whether the current page comes from the unpinned list
+		found := pager.unpinnedList.Find(func(l *list.Link) bool { 
+			return l.GetKey() == pagenum
+		})
+		// if it is from the unpinned page
 		if found != nil{
+			// pop the page from unpinned list
+			page.PopSelf()
+			// double check if the pinCount is zero, it means really unpinned, then push it to pinned list
+			if cur_page.pinCount == 0{
+				pager.pinnedList.PushTail(&cur_page)
+			}
+			// update pinCount
 			cur_page.pinCount += 1 
-			pager.pinnedList.PushTail(&cur_page)
 		}
+		// TODO might need to increase pinCount
 		pager.ReadPageFromDisk(cur_page, pagenum)
 		return cur_page, nil
 	}else{
@@ -194,14 +219,24 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 func (pager *Pager) FlushPage(page *Page) {
 	pagenum := page.pagenum
 	is_dirty := page.dirty
-	cur_page, ok := pager.pageTable[pagenum]
+	cur, ok := pager.pageTable[pagenum]
+	// when page is both dirty and exists
 	if ok && is_dirty {
-		cur_page := cur_page.GetKey().(*Page)
+		// get the current page
+		cur_page := cur.GetKey().(*Page)
+		// get the page data
 		page_data := cur_page.data
+		// write data to disk
 		pager.file.WriteAt(*page_data, pagenum*int64(PAGESIZE))
+		// empty pin count
 		page.pinCount = 0
+		// update dirty
 		page.dirty = false
-		pager.pinnedList.PushTail(&cur_page)
+		// pop the current page whenever it is
+		cur.PopSelf()
+		// push it into unpinned list
+		pager.unpinnedList.PushTail(&cur_page)
+		
 	}
 }
 
