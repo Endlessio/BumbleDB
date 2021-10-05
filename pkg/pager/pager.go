@@ -204,7 +204,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		pager.ReadPageFromDisk(cur_page, pagenum)
 		return cur_page, nil
 	}else{
-		new_page, check := pager.NewPage(pagenum)
+		new_page, _ := pager.NewPage(pagenum)
 		if new_page != nil{
 			return new_page, nil
 		}
