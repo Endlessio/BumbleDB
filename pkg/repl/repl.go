@@ -4,15 +4,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-
-	// "fmt"
-
-	// "fmt"
-
 	"io"
 	"net"
 	"os"
-
 	"strings"
 
 	uuid "github.com/google/uuid"
@@ -42,35 +36,41 @@ func (replConfig *REPLConfig) GetAddr() uuid.UUID {
 
 // Construct an empty REPL.
 func NewRepl() *REPL {
-	r := new(REPL)
-	r.commands = make(map[string]func(string, *REPLConfig) error)
-	r.help = make(map[string]string)
-	return r
+	/* SOLUTION {{{ */
+	commands := make(map[string]func(string, *REPLConfig) error)
+	help := make(map[string]string)
+	return &REPL{commands: commands, help: help}
+	/* SOLUTION }}} */
 }
 
 // Combines a slice of REPLs.
 func CombineRepls(repls []*REPL) (*REPL, error) {
-	if len(repls) == 0{
-		r := NewRepl()
-		return r, nil
+	/* SOLUTION {{{ */
+	// If no REPLs are passed, just return an empty one.
+	if len(repls) == 0 {
+		return NewRepl(), nil
 	}
-	cur := repls[0]
-	for index, element := range repls{
-		if index == 0{
-		}else{
-			for key := range element.commands {
-				_, ok := cur.commands[key]
-				if ok {
-					return nil, errors.New("duplicated key in repls")
-
-				}else{
-					cur.commands[key] = element.commands[key]
-					cur.help[key] = element.help[key]
-				}
+	// Go through each repl and construct a new command/help set
+	commands := make(map[string]func(string, *REPLConfig) error)
+	help := make(map[string]string)
+	for _, r := range repls {
+		// Combine the commands
+		for k, v := range r.commands {
+			if _, found := commands[k]; found {
+				return nil, errors.New("duplicate trigger" + k)
 			}
+			commands[k] = v
+		}
+		// Combine the help strings
+		for k, v := range r.help {
+			if _, found := help[k]; found {
+				return nil, errors.New("duplicate trigger" + k)
+			}
+			help[k] = v
 		}
 	}
-	return cur, nil
+	return &REPL{commands: commands, help: help}, nil
+	/* SOLUTION }}} */
 }
 
 // Get commands.
@@ -85,17 +85,19 @@ func (r *REPL) GetHelp() map[string]string {
 
 // Add a command, along with its help string, to the set of commands.
 func (r *REPL) AddCommand(trigger string, action func(string, *REPLConfig) error, help string) {
+	/* SOLUTION {{{ */
 	r.commands[trigger] = action
 	r.help[trigger] = help
+	/* SOLUTION }}} */
 }
 
 // Return all REPL usage information as a string.
 func (r *REPL) HelpString() string {
-	res := ""
-	for _, ele := range r.help{
-		res += ele
+	var sb strings.Builder
+	for k, v := range r.help {
+		sb.WriteString(fmt.Sprintf("%s: %s\n", k, v))
 	}
-	return res
+	return sb.String()
 }
 
 // Run the REPL.
@@ -110,26 +112,45 @@ func (r *REPL) Run(c net.Conn, clientId uuid.UUID, prompt string) {
 		reader = c
 		writer = c
 	}
-	scanner := bufio.NewScanner(reader)
+	scanner := bufio.NewScanner((reader))
 	replConfig := &REPLConfig{writer: writer, clientId: clientId}
 	// Begin the repl loop!
+	/* SOLUTION {{{ */
+	io.WriteString(writer, prompt)
 	for scanner.Scan() {
-		// clean user input here scanner.Text()
-		cur := scanner.Text()
-		splited_cur := strings.Split(cur, " ")
-		pass := splited_cur[0]
-		io.WriteString(writer, prompt)
-		handler, ok := r.commands[pass]
-		if ok{
-			handler(cur, replConfig)
-		}else{
-			fmt.Println(errors.New("the key not in the map"))
+		payload := cleanInput(scanner.Text())
+		fields := strings.Fields(payload)
+		if len(fields) == 0 {
+			io.WriteString(writer, prompt)
+			continue
 		}
-		// after get command, go find action in map
+		trigger := cleanInput(fields[0])
+		// Check for a meta-command.
+		if trigger == ".help" {
+			io.WriteString(writer, r.HelpString())
+			io.WriteString(writer, prompt)
+			continue
+		}
+		// Else, check user commands.
+		if command, exists := r.commands[trigger]; exists {
+			// Call a hardcoded function.
+			err := command(payload, replConfig)
+			if err != nil {
+				io.WriteString(writer, fmt.Sprintf("%v\n", err))
+			}
+		} else {
+			io.WriteString(writer, "command not found\n")
+		}
+		io.WriteString(writer, prompt)
 	}
+	// Print an additional line if we encountered an EOF character.
+	io.WriteString(writer, "\n")
+	/* SOLUTION }}} */
 }
 
 // cleanInput preprocesses input to the db repl.
-// func cleanInput(text string) string {
-// 	panic("function not yet implemented");
-// }
+func cleanInput(text string) string {
+	output := strings.TrimSpace(text)
+	output = strings.ToLower(output)
+	return output
+}
