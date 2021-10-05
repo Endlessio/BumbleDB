@@ -191,7 +191,7 @@ func (pager *Pager) FlushPage(page *Page) {
 	if ok && is_dirty {
 		cur_page := cur_page.GetKey().(*Page)
 		page_data := cur_page.data
-		pager.file.WriteAt(page_data, pagenum*int64(PAGESIZE))
+		pager.file.WriteAt(*page_data, pagenum*int64(PAGESIZE))
 	}
 }
 
