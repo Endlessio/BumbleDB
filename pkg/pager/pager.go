@@ -232,7 +232,7 @@ func (pager *Pager) FlushPage(page *Page) {
 		// pop the current page whenever it is
 		cur.PopSelf()
 		// push it into unpinned list
-		pager.unpinnedList.PushTail(&cur_page)
+		pager.freeList.PushTail(&cur_page)
 		
 	}
 }
