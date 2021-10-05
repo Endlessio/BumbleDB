@@ -138,7 +138,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 	if cur != nil{
 		cur_page := cur.GetKey().(*Page)
 		pager.freeList.PeekHead().PopSelf()
-		// cur_page.pinCount = 1
+		cur_page.pinCount += 1
 		cur_page.pagenum = pagenum
 		// pager.pinnedList.PushTail(&cur_page)
 		pager.nPages = 0
@@ -149,7 +149,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if cur_unpin != nil{
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
 			pager.unpinnedList.PeekHead().PopSelf()
-			// cur_unpin_page.pinCount = 1
+			cur_unpin_page.pinCount += 1
 			pager.nPages = 0
 			cur_unpin_page.pagenum = pagenum
 			// pager.pinnedList.PushTail(&cur_unpin_page)
