@@ -139,6 +139,8 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		cur_page := cur.GetKey().(*Page)
 		pager.freeList.PeekHead().PopSelf()
 		cur_page.pinCount = 1
+		cur_page.pagenum = pagenum
+		pager.pinnedList.PushTail(&cur_page)
 		return cur_page, nil
 	}else{
 		cur_unpin := pager.unpinnedList.PeekHead()
@@ -146,6 +148,8 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
 			pager.unpinnedList.PeekHead().PopSelf()
 			cur_unpin_page.pinCount = 1
+			cur_unpin_page.pagenum = pagenum
+			pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
 		}else{
 			return nil, errors.New("NewPage: only pinned page is available")
