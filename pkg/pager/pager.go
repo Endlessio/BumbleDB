@@ -226,13 +226,13 @@ func (pager *Pager) FlushPage(page *Page) {
 		// write data to disk
 		pager.file.WriteAt(*page_data, pagenum*int64(PAGESIZE))
 		// empty pin count
-		page.pinCount = 0
+		// page.pinCount = 0
 		// update dirty
 		page.dirty = false
 		// pop the current page whenever it is
 		cur.PopSelf()
 		// push it into unpinned list
-		pager.unpinnedList.PushTail(&cur_page)
+		// pager.unpinnedList.PushTail(&cur_page)
 		
 	}
 }
