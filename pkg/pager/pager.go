@@ -142,14 +142,18 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// pop the page from freelist
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
-		cur_page.pinCount = 1
+		cur_page.Get()
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// // init amount of page
 		pager.nPages += 1
+		// evict it from the original pagetable, and flush the page to disk
+		_, ok := pager.pageTable[pagenum];
+		if ok {
+			delete(pager.pageTable, pagenum);
+		}
 		// update pagetable
 		pager.pageTable[pagenum] = cur
-		// pager.pinnedList.PushTail(&cur_page)
 		// return
 		return cur_page, nil
 	}else{
@@ -161,12 +165,16 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
-			cur_unpin_page.pinCount = 1
+			cur_unpin_page.Get()
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// // init amount of page
 			pager.nPages += 1
-			// update pagetable TODO update it in getpage
+			// evict it from the original pagetable, and flush the page to disk
+			_, ok := pager.pageTable[pagenum];
+			if ok {
+				delete(pager.pageTable, pagenum);
+			}
 			pager.pageTable[pagenum] = cur_unpin
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
@@ -199,30 +207,27 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		if found != nil{
 			// pop the page from unpinned list
 			page.PopSelf()
-			// double check if the pinCount is zero, it means really unpinned, then push it to pinned list
-			if cur_page.pinCount == 0{
-				fmt.Println("f*ck")
-				cur_page.pinCount += 1
-				pager.pinnedList.PushTail(&cur_page)
-			}
-			// cur_page.pinCount += 1 
-		}
-
-		// TODO check valid read, if not, put current page to freelist
-		data_check := pager.ReadPageFromDisk(cur_page, pagenum)
-		if data_check == nil{
-			pager.freeList.PushTail(&cur_page)
-			cur_page.pinCount = 0
-			// NOTSURE do we need to throw an error or just return
-			return nil, errors.New("GetPage: the data in the page is not valid")
+			// change pinCount
+			cur_page.Get()
+			pager.pinnedList.PushTail(&cur_page)
 		}
 		return cur_page, nil
 	}else{
 		new_page, _ := pager.NewPage(pagenum)
-		// TODO add amount page pinned list
+
 		if new_page != nil{
-			// NOTSURE do we need to mark it to dirty
-			// new_page.dirty = true
+			// mark dirty for later flush
+			new_page.dirty = true
+			if pagenum<=pager.nPages{
+				// check valid read, if not, put current page to freelist
+				data_check := pager.ReadPageFromDisk(new_page, pagenum)
+				if data_check == nil{
+					pager.freeList.PushTail(&new_page)
+					new_page.pinCount = 0
+					// NOTSURE do we need to throw an error or just return
+					return nil, errors.New("GetPage: the data in the page is not valid")
+				}
+			}
 			pager.pinnedList.PushTail(&new_page)
 			return new_page, nil
 		}
