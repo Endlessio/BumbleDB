@@ -189,8 +189,8 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	// check invalid
-	if pagenum>=NUMPAGES {
-		return nil, errors.New("GetPage: invalid pagenum > NUMPAGES")
+	if pagenum >= pager.nPages {
+		return nil, errors.New("GetPage: invalid pagenum > nPages")
 	}
 	// less than zero check
 	if pagenum<0 {
@@ -220,15 +220,11 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		if new_page != nil{
 			// mark dirty for later flush
 			// new_page.dirty = true
-			if pagenum<=pager.nPages{
+			if pagenum<pager.nPages{
 				// check valid read, if not, put current page to freelist
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
-				if data_check == nil{
-					new_page.Put()
-					// new_page.pinCount = 0
-					// NOTSURE do we need to throw an error or just return
-					return new_page, nil
-					// return nil, errors.New("GetPage: the data in the page is not valid")
+				if data_check != nil{
+					return nil, errors.New("GETPAGE: the data is not valid")
 				}
 			}
 			pager.pinnedList.PushTail(&new_page)
