@@ -193,7 +193,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	// check invalid
-	if pagenum >= pager.nPages {
+	if pagenum >= NUMPAGES {
 		return nil, errors.New("GetPage: invalid pagenum > nPages")
 	}
 	// less than zero check
