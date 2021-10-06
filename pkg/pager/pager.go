@@ -231,6 +231,8 @@ func (pager *Pager) FlushPage(page *Page) {
 		page.dirty = false
 		// pop the current page whenever it is
 		cur.PopSelf()
+		// test: try to minus nPages
+		pager.nPages -= 1
 		// push it into free list
 		pager.freeList.PushTail(&cur_page)
 		
