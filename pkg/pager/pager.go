@@ -140,6 +140,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// get current page
 		cur_page := cur.GetKey().(*Page)
 		// pop the page from freelist
+		pager.ptMtx.Lock()
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
 		cur_page.pinCount = 1
@@ -155,6 +156,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		pager.FlushPage(cur_page)
 		// update pagetable
 		pager.pageTable[pagenum] = cur
+		pager.ptMtx.Unlock()
 		// return
 		return cur_page, nil
 	}else{
@@ -163,6 +165,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if cur_unpin != nil{
 			// get current page
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
+			pager.ptMtx.Lock()
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
@@ -178,6 +181,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			}
 			pager.FlushPage(cur_unpin_page)
 			pager.pageTable[pagenum] = cur_unpin
+			pager.ptMtx.Unlock()
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
 		}else{
@@ -207,11 +211,13 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		})
 		// if it is from the unpinned page
 		if found != nil{
+			pager.ptMtx.Lock()
 			// pop the page from unpinned list
 			page.PopSelf()
 			// change pinCount
 			cur_page.Get()
 			pager.pinnedList.PushTail(&cur_page)
+			pager.ptMtx.Unlock()
 		}
 		return cur_page, nil
 	}else{
@@ -219,7 +225,6 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 
 		if new_page != nil{
 			// mark dirty for later flush
-			// new_page.dirty = true
 			if pagenum<pager.nPages{
 				// check valid read, if not, put current page to freelist
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
@@ -227,7 +232,9 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 					return nil, errors.New("GETPAGE: the data is not valid")
 				}
 			}
+			pager.ptMtx.Lock()
 			pager.pinnedList.PushTail(&new_page)
+			pager.ptMtx.Unlock()
 			return new_page, nil
 		}
 	}
