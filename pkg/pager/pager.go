@@ -146,7 +146,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// // init amount of page
-		// pager.nPages += 1
+		pager.nPages += 1
 		// update pagetable
 		pager.pageTable[pagenum] = cur
 		// return
@@ -164,7 +164,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// // init amount of page
-			// pager.nPages += 1
+			pager.nPages += 1
 			// update pagetable TODO update it in getpage
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
@@ -199,7 +199,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			page.PopSelf()
 			// double check if the pinCount is zero, it means really unpinned, then push it to pinned list
 			if cur_page.pinCount == 0{
-				cur_page.pinCount += 1
+				// cur_page.pinCount += 1
 				pager.pinnedList.PushTail(&cur_page)
 			}
 		}
@@ -214,7 +214,6 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		new_page, _ := pager.NewPage(pagenum)
 		// TODO add amount page pinned list
 		if new_page != nil{
-			pager.nPages += 1
 			new_page.dirty = true
 			pager.pinnedList.PushTail(&new_page)
 			return new_page, nil
