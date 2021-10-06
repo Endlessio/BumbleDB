@@ -164,7 +164,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// init amount of page
-			// pager.nPages += 1
+			pager.nPages += 1
 			// update pagetable
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
@@ -177,7 +177,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	// check invalid
-	if pager.nPages>NUMPAGES{
+	if pagenum>NUMPAGES{
 		return nil, errors.New("GetPage: invalid pagenum")
 	}
 	// if the page in the map
