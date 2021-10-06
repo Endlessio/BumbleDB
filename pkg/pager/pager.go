@@ -152,6 +152,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if ok {
 			delete(pager.pageTable, pagenum);
 		}
+		pager.FlushPage(cur_page)
 		// update pagetable
 		pager.pageTable[pagenum] = cur
 		// return
@@ -175,6 +176,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			if ok {
 				delete(pager.pageTable, pagenum);
 			}
+			pager.FlushPage(cur_unpin_page)
 			pager.pageTable[pagenum] = cur_unpin
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
@@ -217,7 +219,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 
 		if new_page != nil{
 			// mark dirty for later flush
-			new_page.dirty = true
+			// new_page.dirty = true
 			if pagenum<=pager.nPages{
 				// check valid read, if not, put current page to freelist
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
