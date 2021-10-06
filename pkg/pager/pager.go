@@ -225,7 +225,8 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 					pager.freeList.PushTail(&new_page)
 					new_page.pinCount = 0
 					// NOTSURE do we need to throw an error or just return
-					return nil, errors.New("GetPage: the data in the page is not valid")
+					return new_page, nil
+					// return nil, errors.New("GetPage: the data in the page is not valid")
 				}
 			}
 			pager.pinnedList.PushTail(&new_page)
