@@ -199,6 +199,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			page.PopSelf()
 			// double check if the pinCount is zero, it means really unpinned, then push it to pinned list
 			if cur_page.pinCount == 0{
+				cur_page.pinCount += 1
 				pager.pinnedList.PushTail(&cur_page)
 			}
 		}
