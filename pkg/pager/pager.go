@@ -224,8 +224,8 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				// check valid read, if not, put current page to freelist
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
 				if data_check == nil{
-					pager.freeList.PushTail(&new_page)
-					new_page.pinCount = 0
+					new_page.Put()
+					// new_page.pinCount = 0
 					// NOTSURE do we need to throw an error or just return
 					return new_page, nil
 					// return nil, errors.New("GetPage: the data in the page is not valid")
