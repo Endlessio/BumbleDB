@@ -149,6 +149,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		pager.nPages += 1
 		// update pagetable
 		pager.pageTable[pagenum] = cur
+		pager.pinnedList.PushTail(&cur_page)
 		// return
 		return cur_page, nil
 	}else{
@@ -167,6 +168,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			pager.nPages += 1
 			// update pagetable TODO update it in getpage
 			pager.pageTable[pagenum] = cur_unpin
+			pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
 		}else{
 			return nil, errors.New("NewPage: only pinned page is available")
@@ -180,7 +182,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	if pagenum>NUMPAGES {
 		return nil, errors.New("GetPage: invalid pagenum > NUMPAGES")
 	}
-	// TODO less than zero check
+	// less than zero check
 	if pagenum<0 {
 		return nil, errors.New("GetPage: invalid pagenum < 0")
 	}
@@ -211,6 +213,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		if data_check == nil{
 			pager.freeList.PushTail(&cur_page)
 			cur_page.pinCount = 0
+			// NOTSURE do we need to throw an error or just return
 			return nil, errors.New("GetPage: the data in the page is not valid")
 		}
 		return cur_page, nil
@@ -218,8 +221,9 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		new_page, _ := pager.NewPage(pagenum)
 		// TODO add amount page pinned list
 		if new_page != nil{
+			// NOTSURE do we need to mark it to dirty
 			// new_page.dirty = true
-			pager.pinnedList.PushTail(&new_page)
+			// pager.pinnedList.PushTail(&new_page)
 			return new_page, nil
 		}
 	}
