@@ -240,15 +240,11 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 func (pager *Pager) FlushPage(page *Page) {
 	pagenum := page.pagenum
 	is_dirty := page.dirty
-	cur, ok := pager.pageTable[pagenum]
+	_, ok := pager.pageTable[pagenum]
 	// when page is both dirty and exists
 	if ok && is_dirty {
-		// get the current page
-		cur_page := cur.GetKey().(*Page)
-		// get the page data
-		page_data := cur_page.data
 		// write data to disk
-		pager.file.WriteAt(*page_data, pagenum*int64(PAGESIZE))
+		pager.file.WriteAt(*page.data, pagenum*int64(PAGESIZE))
 		// NOTSURE do we need to empty pin count
 		// page.pinCount = 0
 		// update dirty
