@@ -142,7 +142,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// pop the page from freelist
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
-		cur_page.Get()
+		cur_page.pinCount = 1
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// // init amount of page
@@ -166,7 +166,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
-			cur_unpin_page.Get()
+			cur_unpin_page.pinCount = 1
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// // init amount of page
