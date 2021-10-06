@@ -142,11 +142,11 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// pop the page from freelist
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
-		cur_page.pinCount = 0
+		cur_page.pinCount = 1
 		// update pagenum
 		cur_page.pagenum = pagenum
-		// init amount of page
-		pager.nPages += 1
+		// // init amount of page
+		// pager.nPages += 1
 		// update pagetable
 		pager.pageTable[pagenum] = cur
 		// return
@@ -160,12 +160,12 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
-			cur_unpin_page.pinCount =0
+			cur_unpin_page.pinCount = 1
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
-			// init amount of page
-			pager.nPages += 1
-			// update pagetable
+			// // init amount of page
+			// pager.nPages += 1
+			// update pagetable TODO update it in getpage
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
 		}else{
@@ -177,9 +177,14 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	// check invalid
-	if pagenum>NUMPAGES{
-		return nil, errors.New("GetPage: invalid pagenum")
+	if pagenum>NUMPAGES {
+		return nil, errors.New("GetPage: invalid pagenum > NUMPAGES")
 	}
+	// TODO less than zero check
+	if pagenum<0 {
+		return nil, errors.New("GetPage: invalid pagenum < 0")
+	}
+
 	// if the page in the map
 	if page, ok := pager.pageTable[pagenum]; ok {
 		// get the current page
@@ -196,16 +201,21 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			if cur_page.pinCount == 0{
 				pager.pinnedList.PushTail(&cur_page)
 			}
-			// update pinCount
-			cur_page.pinCount += 1 
 		}
-		// TODO might need to increase pinCount
-		// cur_page.pinCount += 1 
-		pager.ReadPageFromDisk(cur_page, pagenum)
+
+		// TODO check valid read, if not, put current page to freelist
+		check_data := pager.ReadPageFromDisk(cur_page, pagenum)
+		if check_data == nil{
+			pager.freeList.PushTail(&cur_page)
+		}
 		return cur_page, nil
 	}else{
 		new_page, _ := pager.NewPage(pagenum)
+		// TODO add amount page pinned list
 		if new_page != nil{
+			pager.nPages += 1
+			new_page.dirty = true
+			pager.pinnedList.PushTail(&new_page)
 			return new_page, nil
 		}
 	}
@@ -230,11 +240,11 @@ func (pager *Pager) FlushPage(page *Page) {
 		// update dirty
 		page.dirty = false
 		// pop the current page whenever it is
-		cur.PopSelf()
+		// cur.PopSelf()
 		// test: try to minus nPages
 		// pager.nPages += 1
 		// push it into free list
-		pager.freeList.PushTail(&cur_page)
+		// pager.freeList.PushTail(&cur_page)
 		
 	}
 }
