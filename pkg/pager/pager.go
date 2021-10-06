@@ -202,6 +202,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				// cur_page.pinCount += 1
 				pager.pinnedList.PushTail(&cur_page)
 			}
+			cur_page.pinCount += 1 
 		}
 
 		// TODO check valid read, if not, put current page to freelist
