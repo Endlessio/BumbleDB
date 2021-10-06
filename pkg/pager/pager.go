@@ -149,7 +149,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		pager.nPages += 1
 		// update pagetable
 		pager.pageTable[pagenum] = cur
-		pager.pinnedList.PushTail(&cur_page)
+		// pager.pinnedList.PushTail(&cur_page)
 		// return
 		return cur_page, nil
 	}else{
@@ -168,7 +168,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			pager.nPages += 1
 			// update pagetable TODO update it in getpage
 			pager.pageTable[pagenum] = cur_unpin
-			pager.pinnedList.PushTail(&cur_unpin_page)
+			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
 		}else{
 			return nil, errors.New("NewPage: only pinned page is available")
@@ -223,7 +223,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		if new_page != nil{
 			// NOTSURE do we need to mark it to dirty
 			// new_page.dirty = true
-			// pager.pinnedList.PushTail(&new_page)
+			pager.pinnedList.PushTail(&new_page)
 			return new_page, nil
 		}
 	}
@@ -243,7 +243,7 @@ func (pager *Pager) FlushPage(page *Page) {
 		page_data := cur_page.data
 		// write data to disk
 		pager.file.WriteAt(*page_data, pagenum*int64(PAGESIZE))
-		// empty pin count
+		// NOTSURE do we need to empty pin count
 		// page.pinCount = 0
 		// update dirty
 		page.dirty = false
