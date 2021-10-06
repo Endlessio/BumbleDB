@@ -199,7 +199,8 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			page.PopSelf()
 			// double check if the pinCount is zero, it means really unpinned, then push it to pinned list
 			if cur_page.pinCount == 0{
-				// cur_page.pinCount += 1
+				fmt.Println("f*ck")
+				cur_page.pinCount += 1
 				pager.pinnedList.PushTail(&cur_page)
 			}
 			// cur_page.pinCount += 1 
@@ -209,6 +210,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		data_check := pager.ReadPageFromDisk(cur_page, pagenum)
 		if data_check == nil{
 			pager.freeList.PushTail(&cur_page)
+			cur_page.pinCount = 0
 			return nil, errors.New("GetPage: the data in the page is not valid")
 		}
 		return cur_page, nil
@@ -216,7 +218,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		new_page, _ := pager.NewPage(pagenum)
 		// TODO add amount page pinned list
 		if new_page != nil{
-			new_page.dirty = true
+			// new_page.dirty = true
 			pager.pinnedList.PushTail(&new_page)
 			return new_page, nil
 		}
@@ -242,11 +244,11 @@ func (pager *Pager) FlushPage(page *Page) {
 		// update dirty
 		page.dirty = false
 		// pop the current page whenever it is
-		cur.PopSelf()
+		// cur.PopSelf()
 		// test: try to minus nPages
 		// pager.nPages += 1
 		// push it into free list
-		pager.freeList.PushTail(&cur_page)
+		// pager.freeList.PushTail(&cur_page)
 		
 	}
 }
