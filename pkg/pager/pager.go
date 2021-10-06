@@ -164,7 +164,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// init amount of page
-			pager.nPages += 1
+			// pager.nPages += 1
 			// update pagetable
 			pager.pageTable[pagenum] = cur_unpin
 			return cur_unpin_page, nil
@@ -232,7 +232,7 @@ func (pager *Pager) FlushPage(page *Page) {
 		// pop the current page whenever it is
 		cur.PopSelf()
 		// test: try to minus nPages
-		pager.nPages -= 1
+		// pager.nPages += 1
 		// push it into free list
 		pager.freeList.PushTail(&cur_page)
 		
