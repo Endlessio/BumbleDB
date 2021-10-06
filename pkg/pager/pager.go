@@ -142,7 +142,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// pop the page from freelist
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
-		cur_page.pinCount = 0
+		cur_page.pinCount = 1
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// // init amount of page
@@ -160,7 +160,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
-			cur_unpin_page.pinCount = 0
+			cur_unpin_page.pinCount = 1
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
 			// // init amount of page
@@ -202,14 +202,14 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				// cur_page.pinCount += 1
 				pager.pinnedList.PushTail(&cur_page)
 			}
-			cur_page.pinCount += 1 
+			// cur_page.pinCount += 1 
 		}
 
 		// TODO check valid read, if not, put current page to freelist
 		data_check := pager.ReadPageFromDisk(cur_page, pagenum)
 		if data_check == nil{
 			pager.freeList.PushTail(&cur_page)
-			// return nil, errors.New("GetPage: the data in the page is not valid")
+			return nil, errors.New("GetPage: the data in the page is not valid")
 		}
 		return cur_page, nil
 	}else{
