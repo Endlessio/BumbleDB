@@ -146,8 +146,6 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		cur_page.pinCount = 1
 		// update pagenum
 		cur_page.pagenum = pagenum
-		// // init amount of page
-		pager.nPages += 1
 		// evict it from the original pagetable, and flush the page to disk
 		_, ok := pager.pageTable[pagenum];
 		if ok {
@@ -172,8 +170,6 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			cur_unpin_page.pinCount = 1
 			// update pagenum
 			cur_unpin_page.pagenum = pagenum
-			// // init amount of page
-			pager.nPages += 1
 			// evict it from the original pagetable, and flush the page to disk
 			_, ok := pager.pageTable[pagenum];
 			if ok {
@@ -193,7 +189,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 // getPage returns the page corresponding to the given pagenum.
 func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	// check invalid
-	if pagenum >= pager.nPages {
+	if pagenum > pager.nPages {
 		return nil, errors.New("GetPage: invalid pagenum > nPages")
 	}
 	// less than zero check
@@ -224,7 +220,9 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		new_page, _ := pager.NewPage(pagenum)
 
 		if new_page != nil{
-			// mark dirty for later flush
+			if new_page.pagenum == pager.nPages{
+				pager.nPages += 1
+			}
 			if pagenum<pager.nPages{
 				// check valid read, if not, put current page to freelist
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
