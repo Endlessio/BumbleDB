@@ -152,9 +152,11 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if ok {
 			delete(pager.pageTable, pagenum);
 		}
+		// TODO
 		pager.FlushPage(cur_page)
 		// update pagetable
 		pager.pageTable[pagenum] = cur
+		pager.pinnedList.PushTail(&cur_page)
 		pager.ptMtx.Unlock()
 		// return
 		return cur_page, nil
@@ -179,6 +181,7 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			}
 			pager.FlushPage(cur_unpin_page)
 			pager.pageTable[pagenum] = cur_unpin
+			pager.pinnedList.PushTail(&cur_unpin_page)
 			pager.ptMtx.Unlock()
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
@@ -212,8 +215,6 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			pager.ptMtx.Lock()
 			// pop the page from unpinned list
 			page.PopSelf()
-			// // change pinCount
-			// cur_page.Get()
 			pager.pinnedList.PushTail(&cur_page)
 			pager.ptMtx.Unlock()
 		}
