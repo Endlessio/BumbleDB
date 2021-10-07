@@ -134,13 +134,13 @@ func (pager *Pager) ReadPageFromDisk(page *Page, pagenum int64) error {
 // NewPage returns an unused buffer from the free or unpinned list
 // the ptMtx should be locked on entry
 func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
+	pager.ptMtx.Lock()
 	// 如果freelist有空
 	cur := pager.freeList.PeekHead()
 	if cur != nil{
 		// get current page
 		cur_page := cur.GetKey().(*Page)
 		// pop the page from freelist
-		pager.ptMtx.Lock()
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
 		cur_page.pinCount = 1
@@ -155,11 +155,11 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		// TODO
 		// pager.FlushPage(cur_page)
 		// update pagetable
-		newLink := pager.pinnedList.PushTail(&cur_page)
+		newLink := pager.pinnedList.PushTail(cur_page)
 		pager.pageTable[pagenum] = newLink
 		// pager.pinnedList.PushTail(&cur_page)
-		pager.ptMtx.Unlock()
 		// return
+		pager.ptMtx.Unlock()
 		return cur_page, nil
 	}else{
 		// 如果unpinnedlist有空
@@ -167,7 +167,6 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if cur_unpin != nil{
 			// get current page
 			cur_unpin_page := cur_unpin.GetKey().(*Page)
-			pager.ptMtx.Lock()
 			// pop the page from unpinned list
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
@@ -181,16 +180,18 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 				delete(pager.pageTable, pagenum);
 			}
 			pager.FlushPage(cur_unpin_page)
-			newLink := pager.pinnedList.PushTail(&cur_unpin_page)
+			newLink := pager.pinnedList.PushTail(cur_unpin_page)
 			pager.pageTable[pagenum] = newLink
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			pager.ptMtx.Unlock()
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
 		}else{
+			pager.ptMtx.Unlock()
 			return nil, errors.New("NewPage: only pinned page is available")
 		}
 	}
+	
 }
 
 // getPage returns the page corresponding to the given pagenum.
