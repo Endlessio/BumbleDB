@@ -226,7 +226,8 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		if new_page != nil{
 			if pagenum == pager.nPages{
 				pager.nPages += 1
-			}else if pagenum < pager.nPages{
+			}
+			if pagenum < pager.nPages{
 				pager.ReadPageFromDisk(new_page, pagenum)
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
 				if data_check != nil{
