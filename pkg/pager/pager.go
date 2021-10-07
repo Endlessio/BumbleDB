@@ -230,6 +230,8 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
 				if data_check != nil{
 					return nil, errors.New("GETPAGE: the data is not valid")
+				}else{
+					return new_page, nil
 				}
 			}
 			pager.ptMtx.Lock()
