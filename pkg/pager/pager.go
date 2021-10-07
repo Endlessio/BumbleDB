@@ -207,16 +207,14 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		// get the current page
 		cur_page := page.GetKey().(*Page)
 		// check whether the current page comes from the unpinned list
-		found := pager.unpinnedList.Find(func(l *list.Link) bool { 
-			return l.GetKey() == pagenum
-		})
-		// if it is from the unpinned page
-		if found != nil{
-			// pager.ptMtx.Lock()
-			// pop the page from unpinned list
+		if page.GetList() == pager.unpinnedList{
 			page.PopSelf()
 			pager.pinnedList.PushTail(&cur_page)
-			// pager.ptMtx.Unlock()
+			_, ok := pager.pageTable[pagenum];
+			if ok {
+				delete(pager.pageTable, pagenum);
+			}
+			pager.pageTable[pagenum] = page
 		}
 		// change pinCount
 		cur_page.Get()
