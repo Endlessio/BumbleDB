@@ -212,11 +212,13 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			pager.ptMtx.Lock()
 			// pop the page from unpinned list
 			page.PopSelf()
-			// change pinCount
-			cur_page.Get()
+			// // change pinCount
+			// cur_page.Get()
 			pager.pinnedList.PushTail(&cur_page)
 			pager.ptMtx.Unlock()
 		}
+		// change pinCount
+		cur_page.Get()
 		return cur_page, nil
 	}else{
 		new_page, _ := pager.NewPage(pagenum)
