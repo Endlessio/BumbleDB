@@ -144,7 +144,6 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		pager.freeList.PeekHead().PopSelf()
 		// add pinCount
 		cur_page.pinCount = 1
-		// pager.pinnedList.PushTail(&cur_page)
 		// update pagenum
 		cur_page.pagenum = pagenum
 		// evict it from the original pagetable, and flush the page to disk
@@ -152,12 +151,10 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 		if ok {
 			delete(pager.pageTable, pagenum);
 		}
-		// TODO
-		// pager.FlushPage(cur_page)
-		// update pagetable
+		// push it into pinned list
 		newLink := pager.pinnedList.PushTail(cur_page)
+		// update pagetable
 		pager.pageTable[pagenum] = newLink
-		// pager.pinnedList.PushTail(&cur_page)
 		// return
 		pager.ptMtx.Unlock()
 		return cur_page, nil
@@ -171,20 +168,19 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			pager.unpinnedList.PeekHead().PopSelf()
 			// add pinCount
 			cur_unpin_page.pinCount = 1
-			// pager.pinnedList.PushTail(&cur_unpin_page)
-			// update pagenum
-			cur_unpin_page.pagenum = pagenum
 			// evict it from the original pagetable, and flush the page to disk
 			_, ok := pager.pageTable[pagenum];
 			if ok {
 				delete(pager.pageTable, pagenum);
 			}
 			pager.FlushPage(cur_unpin_page)
+			// update pagenum
+			cur_unpin_page.pagenum = pagenum
+			// push to pinned list
 			newLink := pager.pinnedList.PushTail(cur_unpin_page)
+			// update pagetable
 			pager.pageTable[pagenum] = newLink
-			// pager.pinnedList.PushTail(&cur_unpin_page)
 			pager.ptMtx.Unlock()
-			// pager.pinnedList.PushTail(&cur_unpin_page)
 			return cur_unpin_page, nil
 		}else{
 			pager.ptMtx.Unlock()
@@ -209,7 +205,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	if page, ok := pager.pageTable[pagenum]; ok {
 		// get the current page
 		cur_page := page.GetKey().(*Page)
-		// check whether the current page comes from the unpinned list
+		// if it is from unpinned list
 		if page.GetList() == pager.unpinnedList{
 			page.PopSelf()
 			pager.pinnedList.PushTail(&cur_page)
@@ -219,17 +215,18 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			}
 			pager.pageTable[pagenum] = page
 		}
+		// else it is from pinned list
 		// change pinCount
 		cur_page.Get()
 		return cur_page, nil
 	}else{
-		new_page, _ := pager.NewPage(pagenum)
+		new_page, err := pager.NewPage(pagenum)
 
 		if new_page != nil{
 			if pagenum == pager.nPages{
 				pager.nPages += 1
-			}
-			if pagenum<pager.nPages{
+			}else if pagenum < pager.nPages{
+				pager.ReadPageFromDisk(new_page, pagenum)
 				data_check := pager.ReadPageFromDisk(new_page, pagenum)
 				if data_check != nil{
 					return nil, errors.New("GETPAGE: the data is not valid")
@@ -242,9 +239,10 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 			// pager.pinnedList.PushTail(&new_page)
 			// pager.ptMtx.Unlock()
 			return new_page, nil
+		}else{
+			return nil, err
 		}
 	}
-	return nil, nil
 }
 
 // Flush a particular page to disk.
