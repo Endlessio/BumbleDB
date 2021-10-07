@@ -153,9 +153,10 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 			delete(pager.pageTable, pagenum);
 		}
 		// TODO
-		pager.FlushPage(cur_page)
+		// pager.FlushPage(cur_page)
 		// update pagetable
-		pager.pageTable[pagenum] = cur
+		newLink := pager.pinnedList.PushTail(&cur_page)
+		pager.pageTable[pagenum] = newLink
 		// pager.pinnedList.PushTail(&cur_page)
 		pager.ptMtx.Unlock()
 		// return
@@ -180,7 +181,8 @@ func (pager *Pager) NewPage(pagenum int64) (*Page, error) {
 				delete(pager.pageTable, pagenum);
 			}
 			pager.FlushPage(cur_unpin_page)
-			pager.pageTable[pagenum] = cur_unpin
+			newLink := pager.pinnedList.PushTail(&cur_unpin_page)
+			pager.pageTable[pagenum] = newLink
 			// pager.pinnedList.PushTail(&cur_unpin_page)
 			pager.ptMtx.Unlock()
 			// pager.pinnedList.PushTail(&cur_unpin_page)
@@ -256,7 +258,7 @@ func (pager *Pager) FlushPage(page *Page) {
 		// NOTSURE do we need to empty pin count
 		// page.pinCount = 0
 		// update dirty
-		page.dirty = false
+		page.SetDirty(false)
 		// pop the current page whenever it is
 		// cur.PopSelf()
 		// test: try to minus nPages
