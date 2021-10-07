@@ -236,7 +236,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				// }
 			}
 			// pager.ptMtx.Lock()
-			pager.pinnedList.PushTail(&new_page)
+			// pager.pinnedList.PushTail(&new_page)
 			// pager.ptMtx.Unlock()
 			return new_page, nil
 		}
