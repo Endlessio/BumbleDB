@@ -214,10 +214,11 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				delete(pager.pageTable, pagenum);
 			}
 			pager.pageTable[pagenum] = page
+			cur_page.Get()
 		}
 		// else it is from pinned list
 		// change pinCount
-		cur_page.Get()
+		// cur_page.Get()
 		return cur_page, nil
 	}else{
 		new_page, err := pager.NewPage(pagenum)
