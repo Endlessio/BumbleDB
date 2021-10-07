@@ -212,11 +212,11 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		})
 		// if it is from the unpinned page
 		if found != nil{
-			pager.ptMtx.Lock()
+			// pager.ptMtx.Lock()
 			// pop the page from unpinned list
 			page.PopSelf()
 			pager.pinnedList.PushTail(&cur_page)
-			pager.ptMtx.Unlock()
+			// pager.ptMtx.Unlock()
 		}
 		// change pinCount
 		cur_page.Get()
@@ -237,9 +237,9 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 				// 	return new_page, nil
 				// }
 			}
-			pager.ptMtx.Lock()
+			// pager.ptMtx.Lock()
 			pager.pinnedList.PushTail(&new_page)
-			pager.ptMtx.Unlock()
+			// pager.ptMtx.Unlock()
 			return new_page, nil
 		}
 	}
@@ -265,7 +265,6 @@ func (pager *Pager) FlushPage(page *Page) {
 		// pager.nPages += 1
 		// push it into free list
 		// pager.freeList.PushTail(&cur_page)
-		
 	}
 }
 
