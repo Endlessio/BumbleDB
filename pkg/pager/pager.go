@@ -208,7 +208,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		// if it is from unpinned list
 		if page.GetList() == pager.unpinnedList{
 			page.PopSelf()
-			pager.pinnedList.PushTail(&cur_page)
+			pager.pinnedList.PushTail(cur_page)
 			_, ok := pager.pageTable[pagenum];
 			if ok {
 				delete(pager.pageTable, pagenum);
