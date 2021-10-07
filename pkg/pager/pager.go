@@ -220,7 +220,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 		new_page, _ := pager.NewPage(pagenum)
 
 		if new_page != nil{
-			if new_page.pagenum == pager.nPages{
+			if pagenum == pager.nPages{
 				pager.nPages += 1
 			}
 			if pagenum<pager.nPages{
