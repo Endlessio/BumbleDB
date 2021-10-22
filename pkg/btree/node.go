@@ -60,6 +60,9 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
 		}
 	} else {
+		if update {
+			return Split{err: errors.New("node/insertleaf: update non-exist")}
+		}
 		for i:=node.numKeys-1; i>=idx; i-- {
 			key_val := node.getKeyAt(i)
 			val_val := node.getValueAt(i)
@@ -71,7 +74,12 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 		// update number of keys
 		node.updateNumKeys(node.numKeys+1)
 	}
-
+	if node.numKeys>ENTRIES_PER_LEAF_NODE {
+		res := node.split()
+		return res
+	} else {
+		return Split{isSplit: false}
+	}
 	// // deal with the zero case
 	// if idx == 0 && node.numKeys == 0 && key == 0 {
 	// 	node.updateKeyAt(idx, key)
@@ -118,12 +126,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	// 	}
 	// }
 	// check split or not
-	if node.numKeys>ENTRIES_PER_LEAF_NODE {
-		res := node.split()
-		return res
-	} else {
-		return Split{isSplit: false}
-	}
+
 	// if node.getKeyAt(idx) == key {
 	// 	if idx < node.numKeys {
 	// 		if update {
