@@ -306,7 +306,10 @@ func (node *InternalNode) search(key int64) int64 {
 // insert finds the appropriate place in a leaf node to insert a new tuple.
 func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 	index := node.search(key)
-	child, _ := node.getChildAt(index)
+	child, err := node.getChildAt(index)
+	if err != nil {
+		return Split{err: errors.New("node/insert internal: get child error")}
+	}
 	defer child.getPage().Put()
 	split_check := child.insert(key, value, update)
 	// update the key number
