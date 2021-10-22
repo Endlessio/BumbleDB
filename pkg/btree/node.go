@@ -376,7 +376,7 @@ func (node *InternalNode) split() Split {
 		return res
 	}
 	// shift to newnode
-	for i:=num_key/2+1; i<num_key; i++ {
+	for i:=num_key/2; i<num_key; i++ {
 		cur_PN := node.getPNAt(i)
 		cur_key := node.getKeyAt(i)
 		newNode.updateKeyAt(newNode.numKeys, cur_key)
