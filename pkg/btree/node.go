@@ -60,8 +60,12 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	// fmt.Println("duplicated", duplicated_flag, key, value)
 	if node.getKeyAt(idx) == key && key != 0 {
 		if update {
-			node.updateValueAt(idx, value)
-			return Split{}
+			if idx == node.numKeys {
+				return Split{err: errors.New("node/insertleaf: update not exist")}
+			} else {
+				node.updateValueAt(idx, value)
+				return Split{}
+			}
 		} else {
 			// fmt.Println("the key", node.getKeyAt(idx), key, idx)
 			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
