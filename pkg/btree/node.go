@@ -58,7 +58,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	// 	duplicated_flag = true
 	// }
 	// fmt.Println("duplicated", duplicated_flag, key, value)
-	if node.getKeyAt(idx) == key  && key != 0 {
+	if node.getKeyAt(idx) == key && key != 0 {
 		if update {
 			node.updateValueAt(idx, value)
 			return Split{}
