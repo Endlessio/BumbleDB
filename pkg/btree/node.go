@@ -53,19 +53,19 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	idx := node.search(key)
 	
 	// fmt.Println("index", key, idx)
-	duplicated_flag := false
-	if node.getKeyAt(idx) == key  && idx < node.numKeys{
-		duplicated_flag = true
-	}
+	// duplicated_flag := false
+	// if node.getKeyAt(idx) == key  && idx < node.numKeys{
+	// 	duplicated_flag = true
+	// }
 	// fmt.Println("duplicated", duplicated_flag, key, value)
-	if duplicated_flag {
+	if node.getKeyAt(idx) == key  && idx < node.numKeys {
 		if update {
 			node.updateValueAt(idx, value)
-			return Split{isSplit: false}
+			return Split{}
 		} else {
 			// fmt.Println("the key", node.getKeyAt(idx), key, idx)
 			error := errors.New("node/insertleaf: duplicated but not update")
-			return Split{isSplit: false, err: error}
+			return Split{err: error}
 		}
 	} else {
 		// move (idx i) to (idx i+1)
