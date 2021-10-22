@@ -51,7 +51,7 @@ func (node *LeafNode) search(key int64) int64 {
 // if update is true, allow overwriting existing keys. else, error.
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	idx := node.search(key)
-	
+	// fmt.Println("ds", key, idx, node.numKeys)
 	// fmt.Println("index", key, idx)
 	// duplicated_flag := false
 	// if node.getKeyAt(idx) == key  && idx < node.numKeys{
@@ -67,7 +67,8 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 			error := errors.New("node/insertleaf: duplicated but not update")
 			return Split{err: error}
 		}
-	} else {
+	} 
+	if idx < node.numKeys+1 {
 		// move (idx i) to (idx i+1)
 		for i:=node.numKeys-1; i>=idx; i-- {
 			key_val := node.getKeyAt(i)
