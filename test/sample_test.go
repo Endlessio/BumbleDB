@@ -231,8 +231,8 @@ func testBTreeUpdateTenNoWrite(t *testing.T) {
 		}
 	}
 	// Update entries
-	for i := int64(0); i <= 29; i++ {
-		err = index.Update(i, -(i % btree_salt))
+	for i := int64(0); i <= 3; i++ {
+		err = index.Update(30, -(i % btree_salt))
 		if err != nil {
 			t.Error(err)
 		}

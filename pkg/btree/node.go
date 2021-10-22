@@ -61,6 +61,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 		}
 	} else {
 		if update {
+			// fmt.Println("yes")
 			return Split{err: errors.New("node/insertleaf: update non-exist")}
 		}
 		for i:=node.numKeys-1; i>=idx; i-- {
@@ -364,6 +365,7 @@ func (node *InternalNode) delete(key int64) {
 	if err == nil {
 		child.delete(key)
 	}
+	defer child.getPage().Put()
 }
 
 // split is a helper function that splits an internal node, then propagates the split upwards.
