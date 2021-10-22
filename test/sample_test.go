@@ -21,11 +21,11 @@ func getTempBTreeDB(t *testing.T) string {
 
 func TestBTreeTA(t *testing.T) {
 	t.Run("TestBTreeInsertTenNoWrite", testBTreeInsertTenNoWrite)
-	t.Run("TestBTreeInsertTen", testBTreeInsertTen)
-	t.Run("TestBTreeDeleteTenNoWrite", testBTreeDeleteTenNoWrite)
-	t.Run("TestBTreeDeleteTen", testBTreeDeleteTen)
-	t.Run("TestBTreeUpdateTenNoWrite", testBTreeUpdateTenNoWrite)
-	t.Run("TestBTreeUpdateTen", testBTreeUpdateTen)
+	// t.Run("TestBTreeInsertTen", testBTreeInsertTen)
+	// t.Run("TestBTreeDeleteTenNoWrite", testBTreeDeleteTenNoWrite)
+	// t.Run("TestBTreeDeleteTen", testBTreeDeleteTen)
+	// t.Run("TestBTreeUpdateTenNoWrite", testBTreeUpdateTenNoWrite)
+	// t.Run("TestBTreeUpdateTen", testBTreeUpdateTen)
 }
 
 func testBTreeInsertTenNoWrite(t *testing.T) {
@@ -37,7 +37,7 @@ func testBTreeInsertTenNoWrite(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1200; i++ {
 		err = index.Insert(i, i%btree_salt)
 		if err != nil {
 			t.Error(err)
@@ -45,7 +45,7 @@ func testBTreeInsertTenNoWrite(t *testing.T) {
 	}
 	// index.Print(os.Stdout)
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1200; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
