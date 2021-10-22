@@ -54,7 +54,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	
 	// fmt.Println("index", key, idx)
 	duplicated_flag := false
-	if node.getKeyAt(idx) == key {
+	if node.getKeyAt(idx) == key  && key != 0{
 		duplicated_flag = true
 	}
 	// fmt.Println("duplicated", duplicated_flag, key, value)
@@ -152,32 +152,6 @@ func (node *LeafNode) keyToNodeEntry(key int64) (*LeafNode, int64, error) {
 	return node, node.search(key), nil
 }
 
-// // printNode pretty prints our leaf node.
-// func (node *LeafNode) printNode(w io.Writer, firstPrefix string, prefix string) {
-// 	// Format header data.
-// 	var nodeType string = "Leaf"
-// 	var isRoot string
-// 	if node.isRoot() {
-// 		isRoot = " (root)"
-// 	}
-// 	numKeys := strconv.Itoa(int(node.numKeys))
-// 	// Print header data.
-// 	io.WriteString(w, fmt.Sprintf("%v[%v] %v%v size: %v\n",
-// 		firstPrefix, node.page.GetPageNum(), nodeType, isRoot, numKeys))
-// 	// Print entries.
-// 	for cellnum := int64(0); cellnum < node.numKeys; cellnum++ {
-// 		entry := node.getCell(cellnum)
-// 		io.WriteString(w, fmt.Sprintf("%v |--> (%v, %v)\n",
-// 			prefix, entry.GetKey(), entry.GetValue()))
-// 	}
-// 	if node.rightSiblingPN > 0 {
-// 		io.WriteString(w, fmt.Sprintf("%v |--+\n", prefix))
-// 		io.WriteString(w, fmt.Sprintf("%v    | node @ %v\n",
-// 			prefix, node.rightSiblingPN))
-// 		io.WriteString(w, fmt.Sprintf("%v    v\n", prefix))
-// 	}
-// }
-
 // printNode pretty prints our leaf node.
 func (node *LeafNode) printNode(w io.Writer, firstPrefix string, prefix string) {
 	// Format header data.
@@ -198,11 +172,37 @@ func (node *LeafNode) printNode(w io.Writer, firstPrefix string, prefix string) 
 	}
 	if node.rightSiblingPN > 0 {
 		io.WriteString(w, fmt.Sprintf("%v |--+\n", prefix))
-		io.WriteString(w, fmt.Sprintf("%v    | right sibling @ [%v]\n",
+		io.WriteString(w, fmt.Sprintf("%v    | node @ %v\n",
 			prefix, node.rightSiblingPN))
 		io.WriteString(w, fmt.Sprintf("%v    v\n", prefix))
 	}
 }
+
+// // printNode pretty prints our leaf node.
+// func (node *LeafNode) printNode(w io.Writer, firstPrefix string, prefix string) {
+// 	// Format header data.
+// 	var nodeType string = "Leaf"
+// 	var isRoot string
+// 	if node.isRoot() {
+// 		isRoot = " (root)"
+// 	}
+// 	numKeys := strconv.Itoa(int(node.numKeys))
+// 	// Print header data.
+// 	io.WriteString(w, fmt.Sprintf("%v[%v] %v%v size: %v\n",
+// 		firstPrefix, node.page.GetPageNum(), nodeType, isRoot, numKeys))
+// 	// Print entries.
+// 	for cellnum := int64(0); cellnum < node.numKeys; cellnum++ {
+// 		entry := node.getCell(cellnum)
+// 		io.WriteString(w, fmt.Sprintf("%v |--> (%v, %v)\n",
+// 			prefix, entry.GetKey(), entry.GetValue()))
+// 	}
+// 	if node.rightSiblingPN > 0 {
+// 		io.WriteString(w, fmt.Sprintf("%v |--+\n", prefix))
+// 		io.WriteString(w, fmt.Sprintf("%v    | right sibling @ [%v]\n",
+// 			prefix, node.rightSiblingPN))
+// 		io.WriteString(w, fmt.Sprintf("%v    v\n", prefix))
+// 	}
+// }
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////// Internal Node Methods ///////////////////////////
@@ -334,31 +334,6 @@ func (node *InternalNode) keyToNodeEntry(key int64) (*LeafNode, int64, error) {
 	return child.keyToNodeEntry(key)
 }
 
-// // printNode pretty prints our internal node.
-// func (node *InternalNode) printNode(w io.Writer, firstPrefix string, prefix string) {
-// 	// Format header data.
-// 	var nodeType string = "Internal"
-// 	var isRoot string
-// 	if node.isRoot() {
-// 		isRoot = " (root)"
-// 	}
-// 	numKeys := strconv.Itoa(int(node.numKeys + 1))
-// 	// Print header data.
-// 	io.WriteString(w, fmt.Sprintf("%v[%v] %v%v size: %v\n",
-// 		firstPrefix, node.page.GetPageNum(), nodeType, isRoot, numKeys))
-// 	// Print entries.
-// 	nextFirstPrefix := prefix + " |--> "
-// 	nextPrefix := prefix + " |    "
-// 	for idx := int64(0); idx <= node.numKeys; idx++ {
-// 		io.WriteString(w, fmt.Sprintf("%v\n", nextPrefix))
-// 		child, err := node.getChildAt(idx)
-// 		if err != nil {
-// 			return
-// 		}
-// 		defer child.getPage().Put()
-// 		child.printNode(w, nextFirstPrefix, nextPrefix)
-// 	}
-// }
 // printNode pretty prints our internal node.
 func (node *InternalNode) printNode(w io.Writer, firstPrefix string, prefix string) {
 	// Format header data.
@@ -382,8 +357,33 @@ func (node *InternalNode) printNode(w io.Writer, firstPrefix string, prefix stri
 		}
 		defer child.getPage().Put()
 		child.printNode(w, nextFirstPrefix, nextPrefix)
-		if idx != node.numKeys {
-			io.WriteString(w, fmt.Sprintf("\n%v[KEY] %v\n", nextPrefix, node.getKeyAt(idx)))
-		}
 	}
 }
+// // printNode pretty prints our internal node.
+// func (node *InternalNode) printNode(w io.Writer, firstPrefix string, prefix string) {
+// 	// Format header data.
+// 	var nodeType string = "Internal"
+// 	var isRoot string
+// 	if node.isRoot() {
+// 		isRoot = " (root)"
+// 	}
+// 	numKeys := strconv.Itoa(int(node.numKeys + 1))
+// 	// Print header data.
+// 	io.WriteString(w, fmt.Sprintf("%v[%v] %v%v size: %v\n",
+// 		firstPrefix, node.page.GetPageNum(), nodeType, isRoot, numKeys))
+// 	// Print entries.
+// 	nextFirstPrefix := prefix + " |--> "
+// 	nextPrefix := prefix + " |    "
+// 	for idx := int64(0); idx <= node.numKeys; idx++ {
+// 		io.WriteString(w, fmt.Sprintf("%v\n", nextPrefix))
+// 		child, err := node.getChildAt(idx)
+// 		if err != nil {
+// 			return
+// 		}
+// 		defer child.getPage().Put()
+// 		child.printNode(w, nextFirstPrefix, nextPrefix)
+// 		if idx != node.numKeys {
+// 			io.WriteString(w, fmt.Sprintf("\n%v[KEY] %v\n", nextPrefix, node.getKeyAt(idx)))
+// 		}
+// 	}
+// }
