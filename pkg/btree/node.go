@@ -58,40 +58,90 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	// 	duplicated_flag = true
 	// }
 	// fmt.Println("duplicated", duplicated_flag, key, value)
-	if node.getKeyAt(idx) == key && key != 0 {
-		if update {
-			if idx == node.numKeys {
+	if idx == 0 && node.numKeys == 0 && key == 0 {
+		node.updateKeyAt(idx, key)
+		node.updateValueAt(idx, value)
+		// update number of keys
+		node.updateNumKeys(node.numKeys+1)
+	} else {
+		if idx == node.numKeys {
+			if update {
 				return Split{err: errors.New("node/insertleaf: update not exist")}
-			} else {
-				node.updateValueAt(idx, value)
-				return Split{}
 			}
-		} else {
-			// fmt.Println("the key", node.getKeyAt(idx), key, idx)
-			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+			node.updateKeyAt(idx, key)
+			node.updateValueAt(idx, value)
+			// update number of keys
+			node.updateNumKeys(node.numKeys+1)
+		} else if idx < node.numKeys {
+			if node.getKeyAt(idx) == key {
+				if update {
+					node.updateValueAt(idx, value)
+					return Split{}
+				} else {
+					return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+				}
+			} else {
+				for i:=node.numKeys-1; i>=idx; i-- {
+					// fmt.Println("done")
+					key_val := node.getKeyAt(i)
+					val_val := node.getValueAt(i)
+					node.updateKeyAt(i+1, key_val)
+					node.updateValueAt(i+1, val_val)
+				}
+				// update the key, value of insert tuple at the searched index
+				// node.modifyCell(idx, BTre eEntry{key: key, value: value})
+				node.updateKeyAt(idx, key)
+				node.updateValueAt(idx, value)
+				// update number of keys
+				node.updateNumKeys(node.numKeys+1)
+			}
 		}
-	} 
-	if idx == node.numKeys {
-		node.updateKeyAt(idx, key)
-		node.updateValueAt(idx, value)
-		// update number of keys
-		node.updateNumKeys(node.numKeys+1)
-	}else if idx < node.numKeys {
-		// move (idx i) to (idx i+1)
-		for i:=node.numKeys-1; i>=idx; i-- {
-			// fmt.Println("done")
-			key_val := node.getKeyAt(i)
-			val_val := node.getValueAt(i)
-			node.updateKeyAt(i+1, key_val)
-			node.updateValueAt(i+1, val_val)
-		}
-		// update the key, value of insert tuple at the searched index
-		// node.modifyCell(idx, BTre eEntry{key: key, value: value})
-		node.updateKeyAt(idx, key)
-		node.updateValueAt(idx, value)
-		// update number of keys
-		node.updateNumKeys(node.numKeys+1)
 	}
+	// if node.getKeyAt(idx) == key {
+	// 	if idx < node.numKeys {
+	// 		if update {
+	// 			node.updateValueAt(idx, value)
+	// 			return Split{}
+	// 		} else {
+	// 			// fmt.Println("the key", node.getKeyAt(idx), key, idx)
+	// 			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+	// 		}
+	// 	} else if idx == node.numKeys {
+	// 		if update {
+	// 			return Split{err: errors.New("node/insertleaf: update not exist")}
+	// 		} else {
+	// 			if idx == 0 {
+	// 				node.updateKeyAt(idx, key)
+	// 				node.updateValueAt(idx, value)
+	// 				// update number of keys
+	// 				node.updateNumKeys(node.numKeys+1)
+	// 			} else {
+	// 				return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if idx == node.numKeys && idx != 0{
+	// 	node.updateKeyAt(idx, key)
+	// 	node.updateValueAt(idx, value)
+	// 	// update number of keys
+	// 	node.updateNumKeys(node.numKeys+1)
+	// }else if idx < node.numKeys {
+	// 	// move (idx i) to (idx i+1)
+	// 	for i:=node.numKeys-1; i>=idx; i-- {
+	// 		// fmt.Println("done")
+	// 		key_val := node.getKeyAt(i)
+	// 		val_val := node.getValueAt(i)
+	// 		node.updateKeyAt(i+1, key_val)
+	// 		node.updateValueAt(i+1, val_val)
+	// 	}
+	// 	// update the key, value of insert tuple at the searched index
+	// 	// node.modifyCell(idx, BTre eEntry{key: key, value: value})
+	// 	node.updateKeyAt(idx, key)
+	// 	node.updateValueAt(idx, value)
+	// 	// update number of keys
+	// 	node.updateNumKeys(node.numKeys+1)
+	// }
 	// fmt.Println("index", key, idx, node.numKeys, node.getKeyAt(0), node.getKeyAt(1), node.getKeyAt(2),node.getKeyAt(3))
 	// check split or not
 	if node.numKeys>ENTRIES_PER_LEAF_NODE {
