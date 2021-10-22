@@ -64,13 +64,18 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 			return Split{}
 		} else {
 			// fmt.Println("the key", node.getKeyAt(idx), key, idx)
-			error := errors.New("node/insertleaf: duplicated but not update")
-			return Split{err: error}
+			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
 		}
 	} 
-	if idx < node.numKeys+1 {
+	if idx == node.numKeys {
+		node.updateKeyAt(idx, key)
+		node.updateValueAt(idx, value)
+		// update number of keys
+		node.updateNumKeys(node.numKeys+1)
+	}else if idx < node.numKeys {
 		// move (idx i) to (idx i+1)
 		for i:=node.numKeys-1; i>=idx; i-- {
+			// fmt.Println("done")
 			key_val := node.getKeyAt(i)
 			val_val := node.getValueAt(i)
 			node.updateKeyAt(i+1, key_val)
@@ -79,7 +84,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 		// update the key, value of insert tuple at the searched index
 		// node.modifyCell(idx, BTre eEntry{key: key, value: value})
 		node.updateKeyAt(idx, key)
-		node.updateValueAt(idx, key)
+		node.updateValueAt(idx, value)
 		// update number of keys
 		node.updateNumKeys(node.numKeys+1)
 	}
@@ -101,7 +106,9 @@ func (node *LeafNode) delete(key int64) {
 		for i:=int64(ind); i<=int64(node.numKeys)-2; i++{
 			key_val:=node.getKeyAt(i+1)
 			val_val:=node.getValueAt(i+1)
-			node.modifyCell(i, BTreeEntry{key: key_val, value: val_val})
+			node.updateKeyAt(i, key_val)
+			node.updateValueAt(i, val_val)
+			// node.modifyCell(i, BTreeEntry{key: key_val, value: val_val})
 		}
 		node.updateNumKeys(node.numKeys-1)
 	}
@@ -225,7 +232,6 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 	index := node.search(key)
 	child, _ := node.getChildAt(index)
 	defer child.getPage().Put()
-	// TODO Put the page away (eventually) [defer]
 	split_check := child.insert(key, value, update)
 	// update the key number
 	// node.updateNumKeys(node.numKeys+1)
