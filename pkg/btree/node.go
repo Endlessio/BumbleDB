@@ -51,51 +51,78 @@ func (node *LeafNode) search(key int64) int64 {
 // if update is true, allow overwriting existing keys. else, error.
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	idx := node.search(key)
-	// fmt.Println("ds", key, idx, node.numKeys)
-	// fmt.Println("index", key, idx)
-	// duplicated_flag := false
-	// if node.getKeyAt(idx) == key  && idx < node.numKeys{
-	// 	duplicated_flag = true
-	// }
-	// fmt.Println("duplicated", duplicated_flag, key, value)
-	if idx == 0 && node.numKeys == 0 && key == 0 {
+
+	if idx < node.numKeys && node.getKeyAt(idx) == key {
+		if update {
+			node.updateValueAt(idx, value)
+			return Split{}
+		} else {
+			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+		}
+	} else {
+		for i:=node.numKeys-1; i>=idx; i-- {
+			key_val := node.getKeyAt(i)
+			val_val := node.getValueAt(i)
+			node.updateKeyAt(i+1, key_val)
+			node.updateValueAt(i+1, val_val)
+		}
 		node.updateKeyAt(idx, key)
 		node.updateValueAt(idx, value)
 		// update number of keys
 		node.updateNumKeys(node.numKeys+1)
+	}
+
+	// // deal with the zero case
+	// if idx == 0 && node.numKeys == 0 && key == 0 {
+	// 	node.updateKeyAt(idx, key)
+	// 	node.updateValueAt(idx, value)
+	// 	// update number of keys
+	// 	node.updateNumKeys(node.numKeys+1)
+	// } else {
+	// 	// larger than all of the keys: should be inserted at the last 
+	// 	if idx == node.numKeys {
+	// 		// at this time, if update, it would be update non-exist, return error
+	// 		if update {
+	// 			return Split{err: errors.New("node/insertleaf: update not exist")}
+	// 		}
+	// 		// insert at last
+	// 		node.updateKeyAt(idx, key)
+	// 		node.updateValueAt(idx, value)
+	// 		// update number of keys
+	// 		node.updateNumKeys(node.numKeys+1)
+	// 	// insert in the middle
+	// 	} else if idx < node.numKeys {
+	// 		// if duplicated
+	// 		if node.getKeyAt(idx) == key {
+	// 			// if update: update
+	// 			if update {
+	// 				node.updateValueAt(idx, value)
+	// 				return Split{}
+	// 			// if duplicated but not update: error
+	// 			} else {
+	// 				return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+	// 			}
+	// 		// if not duplicated, normal insert
+	// 		} else {
+	// 			for i:=node.numKeys-1; i>=idx; i-- {
+	// 				key_val := node.getKeyAt(i)
+	// 				val_val := node.getValueAt(i)
+	// 				node.updateKeyAt(i+1, key_val)
+	// 				node.updateValueAt(i+1, val_val)
+	// 			}
+	// 			node.updateKeyAt(idx, key)
+	// 			node.updateValueAt(idx, value)
+	// 			// update number of keys
+	// 			node.updateNumKeys(node.numKeys+1)
+	// 		}
+	// 	}
+	// }
+	// check split or not
+	if node.numKeys>ENTRIES_PER_LEAF_NODE {
+		res := node.split()
+		return res
 	} else {
-		if idx == node.numKeys {
-			if update {
-				return Split{err: errors.New("node/insertleaf: update not exist")}
-			}
-			node.updateKeyAt(idx, key)
-			node.updateValueAt(idx, value)
-			// update number of keys
-			node.updateNumKeys(node.numKeys+1)
-		} else if idx < node.numKeys {
-			if node.getKeyAt(idx) == key {
-				if update {
-					node.updateValueAt(idx, value)
-					return Split{}
-				} else {
-					return Split{err: errors.New("node/insertleaf: duplicated but not update")}
-				}
-			} else {
-				for i:=node.numKeys-1; i>=idx; i-- {
-					// fmt.Println("done")
-					key_val := node.getKeyAt(i)
-					val_val := node.getValueAt(i)
-					node.updateKeyAt(i+1, key_val)
-					node.updateValueAt(i+1, val_val)
-				}
-				// update the key, value of insert tuple at the searched index
-				// node.modifyCell(idx, BTre eEntry{key: key, value: value})
-				node.updateKeyAt(idx, key)
-				node.updateValueAt(idx, value)
-				// update number of keys
-				node.updateNumKeys(node.numKeys+1)
-			}
-		}
+		return Split{isSplit: false}
 	}
 	// if node.getKeyAt(idx) == key {
 	// 	if idx < node.numKeys {
@@ -143,13 +170,6 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	// 	node.updateNumKeys(node.numKeys+1)
 	// }
 	// fmt.Println("index", key, idx, node.numKeys, node.getKeyAt(0), node.getKeyAt(1), node.getKeyAt(2),node.getKeyAt(3))
-	// check split or not
-	if node.numKeys>ENTRIES_PER_LEAF_NODE {
-		res := node.split()
-		return res
-	} else {
-		return Split{isSplit: false}
-	}
 }
 
 // delete removes a given tuple from the leaf node, if the given key exists.
