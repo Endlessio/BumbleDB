@@ -305,7 +305,6 @@ func (node *InternalNode) search(key int64) int64 {
 
 // insert finds the appropriate place in a leaf node to insert a new tuple.
 func (node *InternalNode) insert(key int64, value int64, update bool) Split {
-	// fmt.Println("damn")
 	index := node.search(key)
 	child, _ := node.getChildAt(index)
 	defer child.getPage().Put()
@@ -358,8 +357,10 @@ func (node *InternalNode) insertSplit(split Split) Split {
 // delete removes a given tuple from the leaf node, if the given key exists.
 func (node *InternalNode) delete(key int64) {
 	index := node.search(key)
-	child, _ := node.getChildAt(index)
-	child.delete(key)
+	child, err := node.getChildAt(index)
+	if err == nil {
+		child.delete(key)
+	}
 }
 
 // split is a helper function that splits an internal node, then propagates the split upwards.
