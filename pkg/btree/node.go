@@ -52,52 +52,52 @@ func (node *LeafNode) search(key int64) int64 {
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	idx := node.search(key)
 
-	if update {
-		if idx < node.numKeys && node.getKeyAt(idx) == key {
-			node.updateValueAt(idx, value)
-			return Split{}
-		} else {
-			return Split{err: errors.New("node/insertleaf: update non exist")}
-		}
-	} else {
-		if idx < node.numKeys && node.getKeyAt(idx) == key {
-			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
-		} else {
-			for i:=node.numKeys-1; i>=idx; i-- {
-				key_val := node.getKeyAt(i)
-				val_val := node.getValueAt(i)
-				node.updateKeyAt(i+1, key_val)
-				node.updateValueAt(i+1, val_val)
-			}
-			node.updateKeyAt(idx, key)
-			node.updateValueAt(idx, value)
-			// update number of keys
-			node.updateNumKeys(node.numKeys+1)
-		}
-	}
-	// if idx < node.numKeys && node.getKeyAt(idx) == key {
-	// 	if update {
+	// if update {
+	// 	if idx < node.numKeys && node.getKeyAt(idx) == key {
 	// 		node.updateValueAt(idx, value)
 	// 		return Split{}
 	// 	} else {
-	// 		return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+	// 		return Split{err: errors.New("node/insertleaf: update non exist")}
 	// 	}
 	// } else {
-	// 	if update {
-	// 		// fmt.Println("yes")
-	// 		return Split{err: errors.New("node/insertleaf: update non-exist")}
+	// 	if idx < node.numKeys && node.getKeyAt(idx) == key {
+	// 		return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+	// 	} else {
+	// 		for i:=node.numKeys-1; i>=idx; i-- {
+	// 			key_val := node.getKeyAt(i)
+	// 			val_val := node.getValueAt(i)
+	// 			node.updateKeyAt(i+1, key_val)
+	// 			node.updateValueAt(i+1, val_val)
+	// 		}
+	// 		node.updateKeyAt(idx, key)
+	// 		node.updateValueAt(idx, value)
+	// 		// update number of keys
+	// 		node.updateNumKeys(node.numKeys+1)
 	// 	}
-	// 	for i:=node.numKeys-1; i>=idx; i-- {
-	// 		key_val := node.getKeyAt(i)
-	// 		val_val := node.getValueAt(i)
-	// 		node.updateKeyAt(i+1, key_val)
-	// 		node.updateValueAt(i+1, val_val)
-	// 	}
-	// 	node.updateKeyAt(idx, key)
-	// 	node.updateValueAt(idx, value)
-	// 	// update number of keys
-	// 	node.updateNumKeys(node.numKeys+1)
 	// }
+	if idx < node.numKeys && node.getKeyAt(idx) == key {
+		if update {
+			node.updateValueAt(idx, value)
+			return Split{}
+		} else {
+			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+		}
+	} else {
+		if update {
+			// fmt.Println("yes")
+			return Split{err: errors.New("node/insertleaf: update non-exist")}
+		}
+		for i:=node.numKeys-1; i>=idx; i-- {
+			key_val := node.getKeyAt(i)
+			val_val := node.getValueAt(i)
+			node.updateKeyAt(i+1, key_val)
+			node.updateValueAt(i+1, val_val)
+		}
+		node.updateKeyAt(idx, key)
+		node.updateValueAt(idx, value)
+		// update number of keys
+		node.updateNumKeys(node.numKeys+1)
+	}
 	if node.numKeys>ENTRIES_PER_LEAF_NODE {
 		res := node.split()
 		return res

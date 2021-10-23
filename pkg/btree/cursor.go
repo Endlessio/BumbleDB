@@ -57,7 +57,7 @@ func (table *BTreeIndex) TableEnd() (utils.Cursor, error) {
 	// Traverse the rightmost children until we reach a leaf node.
 	for curHeader.nodeType != LEAF_NODE {
 		curNode := pageToInternalNode(curPage)
-		rightmostPN := curNode.getPNAt(curNode.numKeys)
+		rightmostPN := curNode.getPNAt(curNode.numKeys+1)
 		curPage, err = table.pager.GetPage(rightmostPN)
 		if err != nil {
 			return nil, err
@@ -68,7 +68,7 @@ func (table *BTreeIndex) TableEnd() (utils.Cursor, error) {
 	// Set the cursor to point to the first entry in the rightmost leaf node.
 	rightmostNode := pageToLeafNode(curPage)
 	cursor.cellnum = rightmostNode.numKeys
-	cursor.isEnd = (cursor.cellnum == rightmostNode.numKeys)
+	cursor.isEnd = false
 	cursor.curNode = rightmostNode
 	return &cursor, nil
 }
