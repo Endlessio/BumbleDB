@@ -52,6 +52,10 @@ func (node *LeafNode) search(key int64) int64 {
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	idx := node.search(key)
 
+	if update && idx == node.numKeys {
+		return Split{err: errors.New("node/insertleaf: update non exist")}
+	}
+	
 	if idx < node.numKeys && node.getKeyAt(idx) == key {
 		if update {
 			node.updateValueAt(idx, value)
