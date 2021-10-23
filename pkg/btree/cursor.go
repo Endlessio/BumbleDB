@@ -123,10 +123,10 @@ func (table *BTreeIndex) TableFindRange(startKey int64, endKey int64) ([]utils.E
 
 	for start_cursor != end_cursor {
 		cur_entry, get_entry_err := start_cursor.GetEntry()
-		if get_entry_err != nil {
-			return nil, errors.New("cursor/tablefindrange: getEntry error")
+		for get_entry_err == nil {
+			res = append(res, cur_entry)
 		}
-		res = append(res, cur_entry)
+		// res = append(res, cur_entry)
 		step_err := start_cursor.StepForward()
 		if step_err != nil {
 			return nil, errors.New("cursor/tablefindrange: stepForward error")
