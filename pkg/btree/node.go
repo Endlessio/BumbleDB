@@ -226,7 +226,7 @@ func (node *LeafNode) split() Split {
 	defer newNode.page.Put()
 	if err != nil {
 		res.err = errors.New("node/split: fail to split node")
-		return res
+		return Split{}
 	}
 	// add into new node
 	for i:=node.numKeys/2; i<node.numKeys; i++{
@@ -237,8 +237,10 @@ func (node *LeafNode) split() Split {
 		newNode.updateNumKeys(newNode.numKeys+1)
 		// fmt.Println("check", i, cur_val, cur_key, newNode.numKeys, newNode.getKeyAt(0), newNode.getKeyAt(1))
 	}
+	newNode.setRightSibling(node.rightSiblingPN)
 	// delete part of the original node data
 	node.updateNumKeys(node.numKeys/2)
+	node.setRightSibling(newNode.page.GetPageNum())
 
 	right_page_num := newNode.page.GetPageNum()
 	res.rightPN = right_page_num
@@ -341,11 +343,9 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 	// update the key number
 	// node.updateNumKeys(node.numKeys+1)
 	if split_check.isSplit {
-		res := node.insertSplit(split_check)
-		return res
-	} else {
-		return Split{isSplit: false}
-	}
+		split_check = node.insertSplit(split_check)
+	} 
+	return split_check
 }
 
 // insertSplit inserts a split result into an internal node.
