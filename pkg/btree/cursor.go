@@ -57,7 +57,7 @@ func (table *BTreeIndex) TableEnd() (utils.Cursor, error) {
 	// Traverse the rightmost children until we reach a leaf node.
 	for curHeader.nodeType != LEAF_NODE {
 		curNode := pageToInternalNode(curPage)
-		rightmostPN := curNode.getPNAt(curNode.numKeys+1)
+		rightmostPN := curNode.getPNAt(curNode.numKeys)
 		curPage, err = table.pager.GetPage(rightmostPN)
 		if err != nil {
 			return nil, err
