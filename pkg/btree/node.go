@@ -52,33 +52,52 @@ func (node *LeafNode) search(key int64) int64 {
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	idx := node.search(key)
 
-	if update && idx == node.numKeys {
-		return Split{err: errors.New("node/insertleaf: update non exist")}
-	}
-	
-	if idx < node.numKeys && node.getKeyAt(idx) == key {
-		if update {
+	if update {
+		if idx < node.numKeys && node.getKeyAt(idx) == key {
 			node.updateValueAt(idx, value)
 			return Split{}
 		} else {
-			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+			return Split{err: errors.New("node/insertleaf: update non exist")}
 		}
 	} else {
-		if update {
-			// fmt.Println("yes")
-			return Split{err: errors.New("node/insertleaf: update non-exist")}
+		if idx < node.numKeys && node.getKeyAt(idx) == key {
+			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+		} else {
+			for i:=node.numKeys-1; i>=idx; i-- {
+				key_val := node.getKeyAt(i)
+				val_val := node.getValueAt(i)
+				node.updateKeyAt(i+1, key_val)
+				node.updateValueAt(i+1, val_val)
+			}
+			node.updateKeyAt(idx, key)
+			node.updateValueAt(idx, value)
+			// update number of keys
+			node.updateNumKeys(node.numKeys+1)
 		}
-		for i:=node.numKeys-1; i>=idx; i-- {
-			key_val := node.getKeyAt(i)
-			val_val := node.getValueAt(i)
-			node.updateKeyAt(i+1, key_val)
-			node.updateValueAt(i+1, val_val)
-		}
-		node.updateKeyAt(idx, key)
-		node.updateValueAt(idx, value)
-		// update number of keys
-		node.updateNumKeys(node.numKeys+1)
 	}
+	// if idx < node.numKeys && node.getKeyAt(idx) == key {
+	// 	if update {
+	// 		node.updateValueAt(idx, value)
+	// 		return Split{}
+	// 	} else {
+	// 		return Split{err: errors.New("node/insertleaf: duplicated but not update")}
+	// 	}
+	// } else {
+	// 	if update {
+	// 		// fmt.Println("yes")
+	// 		return Split{err: errors.New("node/insertleaf: update non-exist")}
+	// 	}
+	// 	for i:=node.numKeys-1; i>=idx; i-- {
+	// 		key_val := node.getKeyAt(i)
+	// 		val_val := node.getValueAt(i)
+	// 		node.updateKeyAt(i+1, key_val)
+	// 		node.updateValueAt(i+1, val_val)
+	// 	}
+	// 	node.updateKeyAt(idx, key)
+	// 	node.updateValueAt(idx, value)
+	// 	// update number of keys
+	// 	node.updateNumKeys(node.numKeys+1)
+	// }
 	if node.numKeys>ENTRIES_PER_LEAF_NODE {
 		res := node.split()
 		return res
@@ -184,7 +203,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 func (node *LeafNode) delete(key int64) {
 	ind := node.search(key)
 	// exist 
-	if ind < node.numKeys {
+	if ind < node.numKeys && node.getKeyAt(ind) == key{
 		for i:=int64(ind); i<=int64(node.numKeys)-2; i++{
 			key_val:=node.getKeyAt(i+1)
 			val_val:=node.getValueAt(i+1)
@@ -193,6 +212,8 @@ func (node *LeafNode) delete(key int64) {
 			// node.modifyCell(i, BTreeEntry{key: key_val, value: val_val})
 		}
 		node.updateNumKeys(node.numKeys-1)
+	} else {
+		return
 	}
 }
 
@@ -366,11 +387,12 @@ func (node *InternalNode) insertSplit(split Split) Split {
 func (node *InternalNode) delete(key int64) {
 	index := node.search(key)
 	child, err := node.getChildAt(index)
-	if err == nil {
-		child.delete(key)
+	if err != nil {
+		return
 	}
 	defer child.getPage().Put()
-}
+	child.delete(key)
+} 
 
 // split is a helper function that splits an internal node, then propagates the split upwards.
 func (node *InternalNode) split() Split {
@@ -385,7 +407,7 @@ func (node *InternalNode) split() Split {
 		return res
 	}
 	// shift to newnode
-	for i:=num_key/2; i<num_key; i++ {
+	for i:=num_key/2+1; i<num_key; i++ {
 		cur_PN := node.getPNAt(i)
 		cur_key := node.getKeyAt(i)
 		newNode.updateKeyAt(newNode.numKeys, cur_key)
