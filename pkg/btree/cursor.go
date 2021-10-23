@@ -121,16 +121,16 @@ func (table *BTreeIndex) TableFindRange(startKey int64, endKey int64) ([]utils.E
 		return nil, errors.New("cursor/tablefindrange: cannot obtain end cursor")
 	}
 
-	for start_cursor != end_cursor {
+	for start_cursor != end_cursor && !start_cursor.IsEnd() {
 		cur_entry, get_entry_err := start_cursor.GetEntry()
-		for get_entry_err == nil {
-			res = append(res, cur_entry)
+		if get_entry_err != nil {
+			res = append(res, nil)
 		}
-		// res = append(res, cur_entry)
-		step_err := start_cursor.StepForward()
-		if step_err != nil {
-			return res, nil
-		}
+		res = append(res, cur_entry)
+		start_cursor.StepForward()
+		// if step_err != nil {
+		// 	return res, nil
+		// }
 	}
 	return res, nil
 }
