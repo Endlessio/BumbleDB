@@ -65,9 +65,9 @@ func (table *BTreeIndex) TableEnd() (utils.Cursor, error) {
 		defer curPage.Put()
 		curHeader = pageToNodeHeader(curPage)
 	}
-	// Set the cursor to point to the first entry in the rightmost leaf node.
+	// Set the cursor to point to the last entry in the rightmost leaf node.
 	rightmostNode := pageToLeafNode(curPage)
-	cursor.cellnum = rightmostNode.numKeys
+	cursor.cellnum = rightmostNode.numKeys-1
 	cursor.isEnd = false
 	cursor.curNode = rightmostNode
 	return &cursor, nil
