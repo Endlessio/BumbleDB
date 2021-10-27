@@ -128,9 +128,6 @@ func (table *BTreeIndex) TableFindRange(startKey int64, endKey int64) ([]utils.E
 		}
 		res = append(res, cur_entry)
 		start_cursor.StepForward()
-		// if step_err != nil {
-		// 	return res, nil
-		// }
 	}
 	return res, nil
 }
