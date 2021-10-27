@@ -49,12 +49,6 @@ func (bucket *HashBucket) Find(key int64) (utils.Entry, bool) {
 	return nil, false
 }
 
-// [1,2,3,4,1] max = 4
-// 
-// now insert 1, wanna split
-// // is split at middle index 5//2 = 2: index 0-2 one bucket, index 3-4 the other? -> [1,2,3] [4,1]
-// // if we have duplicated key, count for one key or two? [1,2,3] [4,1]
-// // what to do when local_depth >= global_depth ?
 
 // Inserts the given key-value pair, splits if necessary.
 func (bucket *HashBucket) Insert(key int64, value int64) (bool, error) {
