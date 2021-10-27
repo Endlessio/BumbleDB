@@ -92,24 +92,16 @@ func (table *HashTable) ExtendTable() {
 	table.buckets = append(table.buckets, table.buckets...)
 }
 
+
 // Split the given bucket into two, extending the table if necessary.
 func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 	odd_local_depth := bucket.GetDepth()
 	new_local_depth := odd_local_depth+1
 	PN := bucket.page.GetPager()
 
-	bin_str := strconv.FormatInt(hash, 2)
-	odd_bucket_str := "0"+bin_str[len(bin_str)-int(odd_local_depth):]
-	new_bucket_str := "1"+bin_str[len(bin_str)-int(odd_local_depth):]
+	odd_bucket_64 := hash
+	new_bucket_64 := int64(len(table.GetBuckets()))+odd_bucket_64
 
-	odd_bucket_64, err1 := strconv.ParseInt(odd_bucket_str, 2, 64)
-	if err1 != nil {
-		return errors.New("bucket/split: cannot change odd bucket str to int64")
-	}
-	new_bucket_64, err2 := strconv.ParseInt(new_bucket_str, 2, 64)
-	if err2 != nil {
-		return errors.New("bucket/split: cannot change new bucket str to int64")
-	}
 	// update local depth
 	bucket.updateDepth(new_local_depth)
 
@@ -124,15 +116,13 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		cur_key := bucket.getKeyAt(i)
 		cur_val := bucket.getValueAt(i)
 		key_hash := Hasher(cur_key, bucket.GetDepth())
-		key_str := strconv.FormatInt(key_hash, 2)
-		check, _ := strconv.ParseInt(key_str[len(key_str)-int(new_local_depth):], 2, 64)
-		if check == new_bucket_64 {
+		if key_hash == new_bucket_64 {
 			// don't worry about bad hash for now
 			_, ist_err := new_bucket.Insert(cur_key, cur_val)
 			if ist_err != nil {
 				return errors.New("bucket/split: cannot insert into new bucket")
 			}
-		} else if check == odd_bucket_64 {
+		} else if key_hash == odd_bucket_64 {
 			bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
 			bucket.updateNumKeys(bucket.numKeys+1)
 		}
@@ -144,8 +134,6 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		buckets := table.GetBuckets()
 		buckets[new_bucket_64] = new_bucket.page.GetPageNum()
 	}
-
-	
 	return nil
 }
 
