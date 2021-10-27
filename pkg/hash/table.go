@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"strconv"
+	// "strconv"
 	"sync"
 
 	pager "github.com/brown-csci1270/db/pkg/pager"
@@ -116,6 +116,8 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		cur_key := bucket.getKeyAt(i)
 		cur_val := bucket.getValueAt(i)
 		key_hash := Hasher(cur_key, bucket.GetDepth())
+
+
 		if key_hash == new_bucket_64 {
 			// don't worry about bad hash for now
 			_, ist_err := new_bucket.Insert(cur_key, cur_val)
