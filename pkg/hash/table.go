@@ -111,29 +111,34 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		return errors.New("bucket/split: cannot generate new bucket")
 	}
 
+
 	// put values into the correct bucket
 	for i:=int64(0); i<bucket.numKeys; i++ {
 		cur_key := bucket.getKeyAt(i)
 		cur_val := bucket.getValueAt(i)
 		key_hash := Hasher(cur_key, bucket.GetDepth())
-
-
-		if key_hash == new_bucket_64 {
+		check := ^(0xFFFFFFFF << new_local_depth) & key_hash
+		if check == new_bucket_64 {
 			// don't worry about bad hash for now
 			_, ist_err := new_bucket.Insert(cur_key, cur_val)
 			if ist_err != nil {
 				return errors.New("bucket/split: cannot insert into new bucket")
 			}
-		} else if key_hash == odd_bucket_64 {
+		} else if check == odd_bucket_64 {
 			bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
 			bucket.updateNumKeys(bucket.numKeys+1)
 		}
 	}
+
 	//check if local depth larger than global depth
 	if new_local_depth > table.GetDepth() {
 		table.ExtendTable()
 		// reassign the buckets
 		buckets := table.GetBuckets()
+		// for j:=int64(0); j<int64(len(buckets)); j++ {
+		// 	bin_table := ^(0xFFFFFFFF << table.depth) & j
+		// 	bin_bucket := ^(0xFFFFFFFF << table.depth) & j
+		// }
 		buckets[new_bucket_64] = new_bucket.page.GetPageNum()
 	}
 	return nil
