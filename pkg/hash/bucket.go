@@ -40,7 +40,7 @@ func (bucket *HashBucket) GetPage() *pager.Page {
 
 // Finds the entry with the given key.
 func (bucket *HashBucket) Find(key int64) (utils.Entry, bool) {
-	for i:= 0; i < int(bucket.depth); i++ {
+	for i:= 0; i < int(bucket.numKeys); i++ {
 		cur_entry := bucket.getCell(int64(i))
 		if key == cur_entry.GetKey() {
 			return cur_entry, true
