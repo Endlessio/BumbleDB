@@ -1,16 +1,24 @@
 package test
 
 import (
+	// "fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"testing"
 
-	btree "github.com/brown-csci1270/db/pkg/btree"
+	hash "github.com/brown-csci1270/db/pkg/hash"
 )
 
-// Set to some other value
-var btree_salt = int64(999999)
-func getTempBTreeDB(t *testing.T) string {
+type hash_kv struct {
+	key int64
+	val int64
+}
+
+// Mod vals by this value to prevent hardcoding tests
+var hash_salt int64 = rand.Int63n(1000)
+
+func getTempHashDB(t *testing.T) string {
 	tmpfile, err := ioutil.TempFile(".", "db-*")
 	if err != nil {
 		t.Error(err)
@@ -19,33 +27,53 @@ func getTempBTreeDB(t *testing.T) string {
 	return tmpfile.Name()
 }
 
-func TestBTreeTA(t *testing.T) {
-	t.Run("TestBTreeInsertTenNoWrite", testBTreeInsertTenNoWrite)
-	t.Run("TestBTreeInsertTen", testBTreeInsertTen)
-	t.Run("TestBTreeDeleteTenNoWrite", testBTreeDeleteTenNoWrite)
-	t.Run("TestBTreeDeleteTen", testBTreeDeleteTen)
-	t.Run("TestBTreeUpdateTenNoWrite", testBTreeUpdateTenNoWrite)
-	t.Run("TestBTreeUpdateTen", testBTreeUpdateTen)
+func genRandomHashEntries(n int) (entries []hash_kv, answerKey map[int64]int64) {
+	entries = make([]hash_kv, 0)
+	answerKey = make(map[int64]int64)
+	for i := 0; i <= n; i++ {
+	genKey:
+		key := rand.Int63()
+		if _, ok := answerKey[key]; ok {
+			goto genKey
+		}
+		val := rand.Int63()
+		answerKey[key] = val
+		entries = append(entries, hash_kv{key: key, val: val})
+	}
+	return entries, answerKey
 }
 
-func testBTreeInsertTenNoWrite(t *testing.T) {
-	dbName := getTempBTreeDB(t)
+func TestHashTA(t *testing.T) {
+	t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
+	t.Run("TestHashInsertTen", testHashInsertTen)
+	t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
+	t.Run("TestHashDeleteTen", testHashDeleteTen)
+	t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
+	t.Run("TestHashUpdateTen", testHashUpdateTen)
+}
+
+func testHashInsertTenNoWrite(t *testing.T) {
+	dbName := getTempHashDB(t)
 	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
 
 	// Init the database
-	index, err := btree.OpenTable(dbName)
+	index, err := hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
-	for i := int64(0); i <= 20; i++ {
-		err = index.Insert(i, i%btree_salt)
+	// Insert entries
+	for i := int64(0); i <= 2300; i++ {
+		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
+		// fmt.Println("-----------------")
+		// index.Print(os.Stdout)
 	}
-	// index.Print(os.Stdout)
+	// fmt.Println(hash.BUCKETSIZE)
 	// Retrieve entries
-	for i := int64(0); i <= 20; i++ {
+	for i := int64(0); i <= 2300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -56,37 +84,38 @@ func testBTreeInsertTenNoWrite(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != i%btree_salt {
+		if entry.GetValue() != i%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	index.Close()
 }
 
-func testBTreeInsertTen(t *testing.T) {
-	dbName := getTempBTreeDB(t)
+func testHashInsertTen(t *testing.T) {
+	dbName := getTempHashDB(t)
 	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
 
 	// Init the database
-	index, err := btree.OpenTable(dbName)
+	index, err := hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Insert entries
-	for i := int64(0); i <= 29; i++ {
-		err = index.Insert(i, i%btree_salt)
+	for i := int64(0); i <= 1300; i++ {
+		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Close and reopen the database
 	index.Close()
-	index, err = btree.OpenTable(dbName)
+	index, err = hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -97,31 +126,32 @@ func testBTreeInsertTen(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != i%btree_salt {
+		if entry.GetValue() != i%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	index.Close()
 }
 
-func testBTreeDeleteTenNoWrite(t *testing.T) {
-	dbName := getTempBTreeDB(t)
+func testHashDeleteTenNoWrite(t *testing.T) {
+	dbName := getTempHashDB(t)
 	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
 
 	// Init the database
-	index, err := btree.OpenTable(dbName)
+	index, err := hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Insert entries
-	for i := int64(0); i <= 20; i++ {
-		err = index.Insert(i, i%btree_salt)
+	for i := int64(0); i <= 1300; i++ {
+		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 20; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -132,14 +162,14 @@ func testBTreeDeleteTenNoWrite(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != i%btree_salt {
+		if entry.GetValue() != i%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 		// Delete this entry
 		index.Delete(i)
 	}
 	// Retrieve deleted entries
-	for i := int64(0); i <= 20; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if entry != nil || err == nil {
 			t.Error("Could find deleted entry")
@@ -148,30 +178,31 @@ func testBTreeDeleteTenNoWrite(t *testing.T) {
 	index.Close()
 }
 
-func testBTreeDeleteTen(t *testing.T) {
-	dbName := getTempBTreeDB(t)
+func testHashDeleteTen(t *testing.T) {
+	dbName := getTempHashDB(t)
 	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
 
 	// Init the database
-	index, err := btree.OpenTable(dbName)
+	index, err := hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Insert entries
-	for i := int64(0); i <= 29; i++ {
-		err = index.Insert(i, i%btree_salt)
+	for i := int64(0); i <= 1300; i++ {
+		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Close and reopen the database
 	index.Close()
-	index, err = btree.OpenTable(dbName)
+	index, err = hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -182,14 +213,14 @@ func testBTreeDeleteTen(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != i%btree_salt {
+		if entry.GetValue() != i%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 		// Delete this entry
 		index.Delete(i)
 	}
 	// Retrieve deleted entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if entry != nil || err == nil {
 			t.Error("Could find deleted entry")
@@ -198,24 +229,25 @@ func testBTreeDeleteTen(t *testing.T) {
 	index.Close()
 }
 
-func testBTreeUpdateTenNoWrite(t *testing.T) {
-	dbName := getTempBTreeDB(t)
+func testHashUpdateTenNoWrite(t *testing.T) {
+	dbName := getTempHashDB(t)
 	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
 
 	// Init the database
-	index, err := btree.OpenTable(dbName)
+	index, err := hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Insert entries
-	for i := int64(0); i <= 29; i++ {
-		err = index.Insert(i, i%btree_salt)
+	for i := int64(0); i <= 1300; i++ {
+		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -226,19 +258,19 @@ func testBTreeUpdateTenNoWrite(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != i%btree_salt {
+		if entry.GetValue() != i%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	// Update entries
-	for i := int64(0); i <= 3; i++ {
-		err = index.Update(i, -(i % btree_salt))
+	for i := int64(0); i <= 1300; i++ {
+		err = index.Update(i, -(i % hash_salt))
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -249,12 +281,12 @@ func testBTreeUpdateTenNoWrite(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != -(i % btree_salt) {
+		if entry.GetValue() != -(i % hash_salt) {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -265,31 +297,32 @@ func testBTreeUpdateTenNoWrite(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != -(i % btree_salt) {
+		if entry.GetValue() != -(i % hash_salt) {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	index.Close()
 }
 
-func testBTreeUpdateTen(t *testing.T) {
-	dbName := getTempBTreeDB(t)
+func testHashUpdateTen(t *testing.T) {
+	dbName := getTempHashDB(t)
 	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
 
 	// Init the database
-	index, err := btree.OpenTable(dbName)
+	index, err := hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Insert entries
-	for i := int64(0); i <= 29; i++ {
-		err = index.Insert(i, i%btree_salt)
+	for i := int64(0); i <= 10; i++ {
+		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 10; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -300,19 +333,19 @@ func testBTreeUpdateTen(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != i%btree_salt {
+		if entry.GetValue() != i%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	// Update entries
-	for i := int64(0); i <= 29; i++ {
-		err = index.Update(i, -(i % btree_salt))
+	for i := int64(0); i <= 10; i++ {
+		err = index.Update(i, -(i % hash_salt))
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 10; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -323,18 +356,18 @@ func testBTreeUpdateTen(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != -(i % btree_salt) {
+		if entry.GetValue() != -(i % hash_salt) {
 			t.Error("Entry found has the wrong value")
 		}
 	}
 	// Close and reopen the database
 	index.Close()
-	index, err = btree.OpenTable(dbName)
+	index, err = hash.OpenTable(dbName)
 	if err != nil {
 		t.Error(err)
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 29; i++ {
+	for i := int64(0); i <= 10; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -345,7 +378,7 @@ func testBTreeUpdateTen(t *testing.T) {
 		if entry.GetKey() != i {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != -(i % btree_salt) {
+		if entry.GetValue() != -(i % hash_salt) {
 			t.Error("Entry found has the wrong value")
 		}
 	}

@@ -21,6 +21,7 @@ func NewHashBucket(pager *pager.Pager, depth int64) (*HashBucket, error) {
 	newPN := pager.GetFreePN()
 	newPage, err := pager.GetPage(newPN)
 	if err != nil {
+		fmt.Println("bucket/new hash bucket", newPN)
 		return nil, err
 	}
 	bucket := &HashBucket{depth: depth, numKeys: 0, page: newPage}
@@ -69,18 +70,14 @@ func (bucket *HashBucket) Insert(key int64, value int64) (bool, error) {
 
 // Update the given key-value pair, should never split.
 func (bucket *HashBucket) Update(key int64, value int64) error {
-	flag := false
 	for i:= int64(0); i < bucket.numKeys; i++ {
 		cur_key := bucket.getKeyAt(i)
 		if key == cur_key {
 			bucket.updateValueAt(i, value)
-			flag = true
+			return nil
 		}
 	}
-	if !flag {
-		return errors.New("bucket/update: the key is not find in current bucket")
-	}
-	return nil
+	return errors.New("bucket/update: the key is not find in current bucket")
 }
 
 // Delete the given key-value pair, does not coalesce.

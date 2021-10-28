@@ -73,7 +73,8 @@ func (table *HashTable) GetPager() *pager.Pager {
 // Finds the entry with the given key.
 func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	hashed_key := Hasher(key, table.GetDepth())
-	cur_bucket, ok := table.GetBucket(hashed_key)
+	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
+	cur_bucket, ok := table.GetBucket(hash)
 	if ok != nil {
 		return nil, errors.New("table/find: cannot find the corresponding bucket")
 	} else {
@@ -81,6 +82,7 @@ func (table *HashTable) Find(key int64) (utils.Entry, error) {
 		if exist {
 			return entry, nil
 		} else {
+			// fmt.Println("current key", key, hashed_key, hash, table.depth)
 			return nil, errors.New("table/find: cannot find the corresponding entry")
 		}
 	}
@@ -93,56 +95,49 @@ func (table *HashTable) ExtendTable() {
 }
 
 
+
 // Split the given bucket into two, extending the table if necessary.
 func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
+	// fmt.Println("table/split")
 	odd_local_depth := bucket.GetDepth()
 	new_local_depth := odd_local_depth+1
-	PN := bucket.page.GetPager()
+	// PN := bucket.page.GetPager()
 
-	odd_bucket_64 := hash
-	new_bucket_64 := int64(len(table.GetBuckets()))+odd_bucket_64
+	odd_bucket_64 := ^(0xFFFFFFFF << odd_local_depth) & hash //100 -> 4
+	var new_bucket_64 int64
+
+	// get the new bucket index
+	if new_local_depth <= table.GetDepth() {
+		// fmt.Println("not extend", odd_local_depth, new_local_depth, table.GetDepth())
+		new_bucket_64 = int64(math.Pow(2, float64(odd_local_depth)))+odd_bucket_64
+	} else {
+		// fmt.Println("extend", odd_local_depth, new_local_depth, table.GetDepth())
+		new_bucket_64 = int64(len(table.GetBuckets()))+odd_bucket_64
+	}
+	// fmt.Println("odd_bucket_64, new_bucket_64", odd_bucket_64, new_bucket_64)
 
 	// update local depth
 	bucket.updateDepth(new_local_depth)
 
 	// generate new buckets
-	new_bucket, err_new := NewHashBucket(PN, bucket.GetDepth())
+	new_bucket, err_new := NewHashBucket(table.pager, bucket.depth)
 	if err_new != nil {
+		// fmt.Println("fuck", bucket.depth)
 		return errors.New("table/split: cannot generate new bucket")
 	}
+	defer new_bucket.page.Put()
 
-
-	// put values into the correct bucket
-	for i:=int64(0); i<BUCKETSIZE+1; i++ {
-		cur_key := bucket.getKeyAt(i)
-		cur_val := bucket.getValueAt(i)
-		key_hash := Hasher(cur_key, bucket.GetDepth())
-		check := ^(0xFFFFFFFF << new_local_depth) & key_hash
-		if check == new_bucket_64 {
-			// don't worry about bad hash for now
-			_, ist_err := new_bucket.Insert(cur_key, cur_val)
-			if ist_err != nil {
-				return errors.New("table/split: cannot insert into new bucket")
-			}
-		} else if check == odd_bucket_64 {
-			_, ist_err := bucket.Insert(cur_key, cur_val)
-			if ist_err != nil {
-				return errors.New("table/split: cannot insert into new bucket")
-			}
-			// bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
-			// bucket.updateNumKeys(bucket.numKeys+1)
-		} else {
-			return errors.New("table/split: key not corresponds to old/new bucket")
-		}
-	}
-
+	// fmt.Println("table/split: start reassign bucket")
 	buckets := table.GetBuckets()
 	//check if local depth larger than global depth
 	if new_local_depth > table.GetDepth() {
+		// fmt.Println("table/split: local>global")
 		table.ExtendTable()
 		// reassign the buckets
-		buckets[new_bucket_64] = new_bucket.page.GetPageNum()
+		// fmt.Println("table/split: new bucket", new_bucket_64, len(table.buckets), BUCKETSIZE)
+		table.buckets[new_bucket_64] = new_bucket.page.GetPageNum()
 	} else {
+		// fmt.Println("table/split: local<global")
 		for i:=int64(0); i<int64(len(buckets)); i++ {
 			if buckets[i] == bucket.page.GetPageNum() {
 				bin_table := ^(0xFFFFFFFF << new_local_depth) & i
@@ -156,36 +151,92 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 			}
 		}
 	}
+	// fmt.Println("table/split: done reassign bucket")
+
+	// fmt.Println("table/split: start put value into correct bucket")
+	// put values into the correct bucket
+	for i:=int64(0); i<BUCKETSIZE+1; i++ {
+		cur_key := bucket.getKeyAt(i)
+		cur_val := bucket.getValueAt(i)
+		key_hash := Hasher(cur_key, bucket.GetDepth())
+		check := ^(0xFFFFFFFF << new_local_depth) & key_hash
+		// fmt.Println("cur key, cur val", i, cur_key, cur_val, check, new_bucket_64, odd_bucket_64)
+		if check == new_bucket_64 {
+			split, ist_err := new_bucket.Insert(cur_key, cur_val)
+			// ist_err := table.Insert(cur_key, cur_val)
+			if ist_err != nil {
+				return errors.New("table/split: cannot insert into new bucket")
+			}
+			if split {
+				// fmt.Println("table/split: re-split on new bucket", new_bucket_64)
+				ok := table.Split(new_bucket, new_bucket_64)
+				if ok != nil {
+					return errors.New("table/split: recursive split err")
+				}
+			}
+		} else if check == odd_bucket_64 {
+			split, ist_err := bucket.Insert(cur_key, cur_val)
+			// ist_err := table.Insert(cur_key, cur_val)
+			if ist_err != nil {
+				return errors.New("table/split: cannot insert into new bucket")
+			}
+			if split {
+				// fmt.Println("table/split: re-split on odd bucket", odd_bucket_64)
+				ok := table.Split(bucket, odd_bucket_64)
+				if ok != nil {
+					return errors.New("table/split: recursive split err")
+				}
+				// fmt.Println("year! 2")
+			}
+			// bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
+			// bucket.updateNumKeys(bucket.numKeys+1)
+		} else {
+			return errors.New("table/split: key not corresponds to old/new bucket")
+		}
+	}
+
+
 	return nil
 }
 
 // Inserts the given key-value pair, splits if necessary.
 func (table *HashTable) Insert(key int64, value int64) error {
+	// fmt.Println("table/insert", key, value)
 	hashed_key := Hasher(key, table.GetDepth())
-	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
-	cur_bucket, ok := table.GetBucket(hash)
+	// fmt.Println("table/insert", key, hashed_key, table.GetDepth())
+	cur_bucket, ok := table.GetBucket(hashed_key)
 	if ok != nil {
 		return errors.New("table/insert: cannot find the bucket")
-	} else {
-		split, err := cur_bucket.Insert(key, value)
-		if err != nil {
-			return errors.New("table/insert: cannot insert")
-		} 
-		if split {
-			split_err := table.Split(cur_bucket, hash)
-			if split_err != nil {
-				return errors.New("table/insert: cannot split")
-			} else {
-				return nil
-			}
+	}
+
+	// if cur_bucket.GetDepth() < table.GetDepth() {
+	// 	hashed_key = ^(0xFFFFFFFF << cur_bucket.depth) & hashed_key
+	// 	fmt.Println("local depth", hashed_key)
+	// 	cur_bucket, ok = table.GetBucket(hashed_key)
+	// 	if ok != nil {
+	// 		return errors.New("table/insert: cannot find the bucket")
+	// 	}
+	// }
+	split, err := cur_bucket.Insert(key, value)
+	if err != nil {
+		return errors.New("table/insert: cannot insert")
+	} 
+	if split {
+		split_err := table.Split(cur_bucket, hashed_key)
+		if split_err != nil {
+			return errors.New("table/insert: cannot split")
 		} else {
 			return nil
 		}
+	} else {
+		return nil
 	}
 }
 
+
 // Update the given key-value pair.
 func (table *HashTable) Update(key int64, value int64) error {
+	// fmt.Println("table/update")
 	hashed_key := Hasher(key, table.GetDepth())
 	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
 	cur_bucket, ok := table.GetBucket(hash)
@@ -203,6 +254,7 @@ func (table *HashTable) Update(key int64, value int64) error {
 
 // Delete the given key-value pair, does not coalesce.
 func (table *HashTable) Delete(key int64) error {
+	// fmt.Println("table/delete")
 	hashed_key := Hasher(key, table.GetDepth())
 	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
 	cur_bucket, ok := table.GetBucket(hash)
