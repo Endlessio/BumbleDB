@@ -113,7 +113,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 
 
 	// put values into the correct bucket
-	for i:=int64(0); i<bucket.numKeys; i++ {
+	for i:=int64(0); i<BUCKETSIZE+1; i++ {
 		cur_key := bucket.getKeyAt(i)
 		cur_val := bucket.getValueAt(i)
 		key_hash := Hasher(cur_key, bucket.GetDepth())
