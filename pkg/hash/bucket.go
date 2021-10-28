@@ -69,14 +69,18 @@ func (bucket *HashBucket) Insert(key int64, value int64) (bool, error) {
 
 // Update the given key-value pair, should never split.
 func (bucket *HashBucket) Update(key int64, value int64) error {
+	flag := false
 	for i:= int64(0); i < bucket.numKeys; i++ {
 		cur_key := bucket.getKeyAt(i)
 		if key == cur_key {
 			bucket.updateValueAt(i, value)
-			return nil
+			flag = true
 		}
 	}
-	return errors.New("bucket/update: the key is not find in current bucket")
+	if !flag {
+		return errors.New("bucket/update: the key is not find in current bucket")
+	}
+	return nil
 }
 
 // Delete the given key-value pair, does not coalesce.
