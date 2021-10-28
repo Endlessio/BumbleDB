@@ -145,7 +145,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 	} else {
 		for i:=int64(0); i<int64(len(buckets)); i++ {
 			if buckets[i] == bucket.page.GetPageNum() {
-				bin_table := ^(0xFFFFFFFF << new_local_depth) & hash
+				bin_table := ^(0xFFFFFFFF << new_local_depth) & i
 				if bin_table == new_bucket_64 {
 					buckets[i] = new_bucket.page.GetPageNum()
 				} else if bin_table == odd_bucket_64 {
