@@ -156,7 +156,8 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 // Inserts the given key-value pair, splits if necessary.
 func (table *HashTable) Insert(key int64, value int64) error {
 	hashed_key := Hasher(key, table.GetDepth())
-	cur_bucket, ok := table.GetBucket(hashed_key)
+	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
+	cur_bucket, ok := table.GetBucket(hash)
 	if ok != nil {
 		return errors.New("table/insert: cannot find the bucket")
 	} else {
@@ -165,7 +166,7 @@ func (table *HashTable) Insert(key int64, value int64) error {
 			return errors.New("table/insert: cannot insert")
 		} 
 		if split {
-			split_err := table.Split(cur_bucket, hashed_key)
+			split_err := table.Split(cur_bucket, ^(0xFFFFFFFF << cur_bucket.depth) & hashed_key)
 			if split_err != nil {
 				return errors.New("table/insert: cannot split")
 			} else {
