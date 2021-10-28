@@ -125,8 +125,14 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 				return errors.New("table/split: cannot insert into new bucket")
 			}
 		} else if check == odd_bucket_64 {
-			bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
-			bucket.updateNumKeys(bucket.numKeys+1)
+			_, ist_err := new_bucket.Insert(cur_key, cur_val)
+			if ist_err != nil {
+				return errors.New("table/split: cannot insert into new bucket")
+			}
+			// bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
+			// bucket.updateNumKeys(bucket.numKeys+1)
+		} else {
+			return errors.New("table/split: key not corresponds to old/new bucket")
 		}
 	}
 
