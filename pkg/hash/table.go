@@ -108,7 +108,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 	// generate new buckets
 	new_bucket, err_new := NewHashBucket(PN, bucket.GetDepth())
 	if err_new != nil {
-		return errors.New("bucket/split: cannot generate new bucket")
+		return errors.New("table/split: cannot generate new bucket")
 	}
 
 
@@ -122,7 +122,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 			// don't worry about bad hash for now
 			_, ist_err := new_bucket.Insert(cur_key, cur_val)
 			if ist_err != nil {
-				return errors.New("bucket/split: cannot insert into new bucket")
+				return errors.New("table/split: cannot insert into new bucket")
 			}
 		} else if check == odd_bucket_64 {
 			bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
@@ -130,16 +130,25 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		}
 	}
 
+	buckets := table.GetBuckets()
 	//check if local depth larger than global depth
 	if new_local_depth > table.GetDepth() {
 		table.ExtendTable()
 		// reassign the buckets
-		buckets := table.GetBuckets()
-		// for j:=int64(0); j<int64(len(buckets)); j++ {
-		// 	bin_table := ^(0xFFFFFFFF << table.depth) & j
-		// 	bin_bucket := ^(0xFFFFFFFF << table.depth) & j
-		// }
 		buckets[new_bucket_64] = new_bucket.page.GetPageNum()
+	} else {
+		for i:=int64(0); i<int64(len(buckets)); i++ {
+			if buckets[i] == bucket.page.GetPageNum() {
+				bin_table := ^(0xFFFFFFFF << new_local_depth) & i
+				if bin_table == new_bucket_64 {
+					buckets[i] = new_bucket.page.GetPageNum()
+				} else if bin_table == odd_bucket_64 {
+					buckets[i] = bucket.page.GetPageNum()
+				} else {
+					return errors.New("table/split: the entry cannot be assigned to either new or old bucket")
+				}
+			}
+		}
 	}
 	return nil
 }
