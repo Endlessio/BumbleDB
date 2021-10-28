@@ -125,7 +125,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 				return errors.New("table/split: cannot insert into new bucket")
 			}
 		} else if check == odd_bucket_64 {
-			_, ist_err := new_bucket.Insert(cur_key, cur_val)
+			_, ist_err := bucket.Insert(cur_key, cur_val)
 			if ist_err != nil {
 				return errors.New("table/split: cannot insert into new bucket")
 			}
