@@ -166,7 +166,7 @@ func (table *HashTable) Insert(key int64, value int64) error {
 			return errors.New("table/insert: cannot insert")
 		} 
 		if split {
-			split_err := table.Split(cur_bucket, ^(0xFFFFFFFF << cur_bucket.depth) & hashed_key)
+			split_err := table.Split(cur_bucket, hash)
 			if split_err != nil {
 				return errors.New("table/insert: cannot split")
 			} else {
