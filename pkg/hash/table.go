@@ -187,7 +187,8 @@ func (table *HashTable) Insert(key int64, value int64) error {
 // Update the given key-value pair.
 func (table *HashTable) Update(key int64, value int64) error {
 	hashed_key := Hasher(key, table.GetDepth())
-	cur_bucket, ok := table.GetBucket(hashed_key)
+	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
+	cur_bucket, ok := table.GetBucket(hash)
 	if ok != nil {
 		return errors.New("table/update: cannot find the bucket")
 	} else {
@@ -203,7 +204,8 @@ func (table *HashTable) Update(key int64, value int64) error {
 // Delete the given key-value pair, does not coalesce.
 func (table *HashTable) Delete(key int64) error {
 	hashed_key := Hasher(key, table.GetDepth())
-	cur_bucket, ok := table.GetBucket(hashed_key)
+	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
+	cur_bucket, ok := table.GetBucket(hash)
 	if ok != nil {
 		return errors.New("table/delete: cannot find the bucket")
 	} else {
