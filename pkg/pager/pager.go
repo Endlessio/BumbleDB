@@ -184,7 +184,7 @@ func (pager *Pager) GetPage(pagenum int64) (page *Page, err error) {
 	// Else, create a buffer to hold the new page in.
 	page, err = pager.NewPage(pagenum)
 	if err != nil {
-		fmt.Println("pager/get page")
+		// fmt.Println("pager/get page")
 		return nil, err
 	}
 

@@ -162,32 +162,32 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		check := ^(0xFFFFFFFF << new_local_depth) & key_hash
 		// fmt.Println("cur key, cur val", i, cur_key, cur_val, check, new_bucket_64, odd_bucket_64)
 		if check == new_bucket_64 {
-			split, ist_err := new_bucket.Insert(cur_key, cur_val)
-			// ist_err := table.Insert(cur_key, cur_val)
+			// split, ist_err := new_bucket.Insert(cur_key, cur_val)
+			ist_err := table.Insert(cur_key, cur_val)
 			if ist_err != nil {
 				return errors.New("table/split: cannot insert into new bucket")
 			}
-			if split {
-				// fmt.Println("table/split: re-split on new bucket", new_bucket_64)
-				ok := table.Split(new_bucket, new_bucket_64)
-				if ok != nil {
-					return errors.New("table/split: recursive split err")
-				}
-			}
+			// if split {
+			// 	// fmt.Println("table/split: re-split on new bucket", new_bucket_64)
+			// 	ok := table.Split(new_bucket, new_bucket_64)
+			// 	if ok != nil {
+			// 		return errors.New("table/split: recursive split err")
+			// 	}
+			// }
 		} else if check == odd_bucket_64 {
-			split, ist_err := bucket.Insert(cur_key, cur_val)
-			// ist_err := table.Insert(cur_key, cur_val)
+			// split, ist_err := bucket.Insert(cur_key, cur_val)
+			ist_err := table.Insert(cur_key, cur_val)
 			if ist_err != nil {
 				return errors.New("table/split: cannot insert into new bucket")
 			}
-			if split {
-				// fmt.Println("table/split: re-split on odd bucket", odd_bucket_64)
-				ok := table.Split(bucket, odd_bucket_64)
-				if ok != nil {
-					return errors.New("table/split: recursive split err")
-				}
-				// fmt.Println("year! 2")
-			}
+			// if split {
+			// 	// fmt.Println("table/split: re-split on odd bucket", odd_bucket_64)
+			// 	ok := table.Split(bucket, odd_bucket_64)
+			// 	if ok != nil {
+			// 		return errors.New("table/split: recursive split err")
+			// 	}
+			// 	// fmt.Println("year! 2")
+			// }
 			// bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
 			// bucket.updateNumKeys(bucket.numKeys+1)
 		} else {
@@ -209,14 +209,6 @@ func (table *HashTable) Insert(key int64, value int64) error {
 		return errors.New("table/insert: cannot find the bucket")
 	}
 
-	// if cur_bucket.GetDepth() < table.GetDepth() {
-	// 	hashed_key = ^(0xFFFFFFFF << cur_bucket.depth) & hashed_key
-	// 	fmt.Println("local depth", hashed_key)
-	// 	cur_bucket, ok = table.GetBucket(hashed_key)
-	// 	if ok != nil {
-	// 		return errors.New("table/insert: cannot find the bucket")
-	// 	}
-	// }
 	split, err := cur_bucket.Insert(key, value)
 	if err != nil {
 		return errors.New("table/insert: cannot insert")

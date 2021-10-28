@@ -21,7 +21,7 @@ func NewHashBucket(pager *pager.Pager, depth int64) (*HashBucket, error) {
 	newPN := pager.GetFreePN()
 	newPage, err := pager.GetPage(newPN)
 	if err != nil {
-		fmt.Println("bucket/new hash bucket", newPN)
+		// fmt.Println("bucket/new hash bucket", newPN)
 		return nil, err
 	}
 	bucket := &HashBucket{depth: depth, numKeys: 0, page: newPage}
