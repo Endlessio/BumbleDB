@@ -1,7 +1,7 @@
 package test
 
 import (
-	"fmt"
+	// "fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -64,8 +64,8 @@ func randomTest(t *testing.T){
 		t.Error(err)
 	}
 	var arr []int64
-	for i:=0; i<1000; i++ {
-		rand := rand.Int63n(1876791010609551470)
+	for i:=0; i<=1000; i++ {
+		rand := rand.Int63n(8674665223082153551)
 		arr = append(arr, rand)
 		// fmt.Println(i, rand)
 		err = index.Insert(rand, rand%hash_salt)
