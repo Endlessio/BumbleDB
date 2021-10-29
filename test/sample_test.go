@@ -64,7 +64,7 @@ func randomTest(t *testing.T){
 		t.Error(err)
 	}
 	var arr []int64
-	for i:=0; i<=1000; i++ {
+	for i:=0; i<=1200; i++ {
 		rand := rand.Int63n(8674665223082153551)
 		arr = append(arr, rand)
 		// fmt.Println(i, rand)
