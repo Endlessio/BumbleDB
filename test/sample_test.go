@@ -2,6 +2,7 @@ package test
 
 import (
 	// "fmt"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -44,12 +45,12 @@ func genRandomHashEntries(n int) (entries []hash_kv, answerKey map[int64]int64) 
 }
 
 func TestHashTA(t *testing.T) {
-	t.Run("random", randomTest)
-	t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
-	t.Run("TestHashInsertTen", testHashInsertTen)
-	t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
-	t.Run("TestHashDeleteTen", testHashDeleteTen)
-	t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
+	// t.Run("random", randomTest)
+	// t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
+	// t.Run("TestHashInsertTen", testHashInsertTen)
+	// t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
+	// t.Run("TestHashDeleteTen", testHashDeleteTen)
+	// t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
 	t.Run("TestHashUpdateTen", testHashUpdateTen)
 }
 
@@ -64,9 +65,10 @@ func randomTest(t *testing.T){
 		t.Error(err)
 	}
 	var arr []int64
-	for i:=0; i<2050; i++ {
+	for i:=0; i<2100; i++ {
 		rand := int64(rand.Intn(1000))
 		arr = append(arr, rand)
+		fmt.Println(i, rand)
 		err = index.Insert(rand, rand)
 		if err != nil {
 			t.Error(err)
@@ -355,14 +357,14 @@ func testHashUpdateTen(t *testing.T) {
 		t.Error(err)
 	}
 	// Insert entries
-	for i := int64(0); i <= 10; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		err = index.Insert(i, i%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 10; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -378,14 +380,14 @@ func testHashUpdateTen(t *testing.T) {
 		}
 	}
 	// Update entries
-	for i := int64(0); i <= 10; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		err = index.Update(i, -(i % hash_salt))
 		if err != nil {
 			t.Error(err)
 		}
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 10; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
@@ -407,7 +409,7 @@ func testHashUpdateTen(t *testing.T) {
 		t.Error(err)
 	}
 	// Retrieve entries
-	for i := int64(0); i <= 10; i++ {
+	for i := int64(0); i <= 1300; i++ {
 		entry, err := index.Find(i)
 		if err != nil {
 			t.Error(err)
