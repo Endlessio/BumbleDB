@@ -55,7 +55,7 @@ func (bucket *HashBucket) Find(key int64) (utils.Entry, bool) {
 func (bucket *HashBucket) Insert(key int64, value int64) (bool, error) {
 	// no enough space
 	if bucket.numKeys == BUCKETSIZE {
-		bucket.modifyCell(bucket.numKeys, HashEntry{key, value})
+		// bucket.modifyCell(bucket.numKeys, HashEntry{key, value})
 		// bucket.updateDepth(bucket.GetDepth()+1)
 		bucket.updateNumKeys(0)
 		return true, nil

@@ -158,7 +158,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 
 	// fmt.Println("table/split: start put value into correct bucket")
 	// put values into the correct bucket
-	for i:=int64(0); i<=BUCKETSIZE; i++ {
+	for i:=int64(0); i<BUCKETSIZE; i++ {
 		cur_key := bucket.getKeyAt(i)
 		cur_val := bucket.getValueAt(i)
 		check := Hasher(cur_key, bucket.GetDepth())
@@ -232,6 +232,10 @@ func (table *HashTable) Insert(key int64, value int64) error {
 		if split_err != nil {
 			return errors.New("table/insert: cannot split")
 		} else {
+			ok := table.Insert(key, value)
+			if ok!=nil {
+				return errors.New("table/insert: after split, cannot insert last one")
+			}
 			return nil
 		}
 	} else {
