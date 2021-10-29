@@ -73,8 +73,8 @@ func (table *HashTable) GetPager() *pager.Pager {
 // Finds the entry with the given key.
 func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	hashed_key := Hasher(key, table.GetDepth())
-	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
-	cur_bucket, ok := table.GetBucket(hash)
+	// hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
+	cur_bucket, ok := table.GetBucket(hashed_key)
 	if ok != nil {
 		return nil, errors.New("table/find: cannot find the corresponding bucket")
 	} 
@@ -83,7 +83,7 @@ func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	if exist {
 		return entry, nil
 	} else {
-		fmt.Println("table/find: cannot find current key", key, hashed_key, hash, table.depth)
+		fmt.Println("table/find: cannot find current key", key, hashed_key, hashed_key, table.depth)
 		return nil, errors.New("table/find: cannot find the corresponding entry")
 	}
 	
@@ -104,6 +104,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 	new_local_depth := old_local_depth+1
 
 	old_bucket_64 := ^(0xFFFFFFFF << old_local_depth) & hash
+	// old_bucket_64 := Hasher(hash, old_local_depth)
 	var new_bucket_64 int64
 
 	// get the new bucket index
@@ -214,7 +215,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 func (table *HashTable) Insert(key int64, value int64) error {
 	// fmt.Println("table/insert", key, value)
 	hashed_key := Hasher(key, table.GetDepth())
-	// fmt.Println("table/insert", key, hashed_key, table.GetDepth())
+	fmt.Println("table/insert", key, hashed_key, table.GetDepth())
 	cur_bucket, ok := table.GetBucket(hashed_key)
 	if ok != nil {
 		return errors.New("table/insert: cannot find the bucket")
@@ -242,8 +243,8 @@ func (table *HashTable) Insert(key int64, value int64) error {
 func (table *HashTable) Update(key int64, value int64) error {
 	// fmt.Println("table/update")
 	hashed_key := Hasher(key, table.GetDepth())
-	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
-	cur_bucket, ok := table.GetBucket(hash)
+	// hash := ^(0xFFFFFFFF << table.GetDepth()) &  hashed_key
+	cur_bucket, ok := table.GetBucket(hashed_key)
 	if ok != nil {
 		return errors.New("table/update: cannot find the bucket")
 	}
@@ -261,8 +262,8 @@ func (table *HashTable) Update(key int64, value int64) error {
 func (table *HashTable) Delete(key int64) error {
 	// fmt.Println("table/delete")
 	hashed_key := Hasher(key, table.GetDepth())
-	hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
-	cur_bucket, ok := table.GetBucket(hash)
+	// hash := ^(0xFFFFFFFF << table.GetDepth()) & hashed_key
+	cur_bucket, ok := table.GetBucket(hashed_key)
 	if ok != nil {
 		return errors.New("table/delete: cannot find the bucket")
 	} 
@@ -305,17 +306,15 @@ func (table *HashTable) Print(w io.Writer) {
 	io.WriteString(w, "====\n")
 	io.WriteString(w, fmt.Sprintf("global depth: %d\n", table.depth))
 	for i := range table.buckets {
-		if i == 98 {
-			io.WriteString(w, fmt.Sprintf("====\nbucket %d\n", i))
-			bucket, err := table.GetBucket(int64(i))
-			if err != nil {
-				continue
-			}
-			bucket.RLock()
-			bucket.Print(w)
-			bucket.RUnlock()
-			bucket.page.Put()
+		io.WriteString(w, fmt.Sprintf("====\nbucket %d\n", i))
+		bucket, err := table.GetBucket(int64(i))
+		if err != nil {
+			continue
 		}
+		bucket.RLock()
+		bucket.Print(w)
+		bucket.RUnlock()
+		bucket.page.Put()
 	}
 	io.WriteString(w, "====\n")
 }

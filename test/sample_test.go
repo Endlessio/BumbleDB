@@ -1,7 +1,6 @@
 package test
 
 import (
-	// "fmt"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -45,13 +44,13 @@ func genRandomHashEntries(n int) (entries []hash_kv, answerKey map[int64]int64) 
 }
 
 func TestHashTA(t *testing.T) {
-	// t.Run("random", randomTest)
+	t.Run("random", randomTest)
 	// t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
 	// t.Run("TestHashInsertTen", testHashInsertTen)
 	// t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
 	// t.Run("TestHashDeleteTen", testHashDeleteTen)
 	// t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
-	t.Run("TestHashUpdateTen", testHashUpdateTen)
+	// t.Run("TestHashUpdateTen", testHashUpdateTen)
 }
 
 func randomTest(t *testing.T){
@@ -65,11 +64,11 @@ func randomTest(t *testing.T){
 		t.Error(err)
 	}
 	var arr []int64
-	for i:=0; i<2100; i++ {
-		rand := int64(rand.Intn(1000))
+	for i:=0; i<1000; i++ {
+		rand := rand.Int63n(1876791010609551470)
 		arr = append(arr, rand)
-		fmt.Println(i, rand)
-		err = index.Insert(rand, rand)
+		// fmt.Println(i, rand)
+		err = index.Insert(rand, rand%hash_salt)
 		if err != nil {
 			t.Error(err)
 		}
@@ -87,7 +86,7 @@ func randomTest(t *testing.T){
 		if entry.GetKey() != arr[j] {
 			t.Error("Entry with wrong entry was found")
 		}
-		if entry.GetValue() != arr[j] {
+		if entry.GetValue() != arr[j]%hash_salt {
 			t.Error("Entry found has the wrong value")
 		}
 	}
