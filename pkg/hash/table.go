@@ -83,7 +83,7 @@ func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	if exist {
 		return entry, nil
 	} else {
-		fmt.Println("table/find: cannot find current key", key, hashed_key, hash, table.depth)
+		fmt.Println("table/find: cannot find current key", key, hashed_key, table.depth)
 		return nil, errors.New("table/find: cannot find the corresponding entry")
 	}
 	
