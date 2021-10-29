@@ -44,12 +44,52 @@ func genRandomHashEntries(n int) (entries []hash_kv, answerKey map[int64]int64) 
 }
 
 func TestHashTA(t *testing.T) {
+	t.Run("random", randomTest)
 	t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
 	t.Run("TestHashInsertTen", testHashInsertTen)
 	t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
 	t.Run("TestHashDeleteTen", testHashDeleteTen)
 	t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
 	t.Run("TestHashUpdateTen", testHashUpdateTen)
+}
+
+func randomTest(t *testing.T){
+	dbName := getTempHashDB(t)
+	defer os.Remove(dbName)
+	defer os.Remove(dbName + ".meta")
+
+	// Init the database
+	index, err := hash.OpenTable(dbName)
+	if err != nil {
+		t.Error(err)
+	}
+	var arr []int64
+	for i:=0; i<2050; i++ {
+		rand := int64(rand.Intn(1000))
+		arr = append(arr, rand)
+		err = index.Insert(rand, rand)
+		if err != nil {
+			t.Error(err)
+		}
+		// fmt.Println("-----------------")
+		// index.Print(os.Stdout)
+	}
+	for j:= 0; j<len(arr); j++ {
+		entry, err := index.Find(arr[j])
+		if err != nil {
+			t.Error(err)
+		}
+		if entry == nil {
+			t.Error("Inserted entry could not be found")
+		}
+		if entry.GetKey() != arr[j] {
+			t.Error("Entry with wrong entry was found")
+		}
+		if entry.GetValue() != arr[j] {
+			t.Error("Entry found has the wrong value")
+		}
+	}
+	index.Close()
 }
 
 func testHashInsertTenNoWrite(t *testing.T) {
