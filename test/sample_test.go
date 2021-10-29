@@ -45,12 +45,12 @@ func genRandomHashEntries(n int) (entries []hash_kv, answerKey map[int64]int64) 
 
 func TestHashTA(t *testing.T) {
 	t.Run("random", randomTest)
-	// t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
-	// t.Run("TestHashInsertTen", testHashInsertTen)
-	// t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
-	// t.Run("TestHashDeleteTen", testHashDeleteTen)
-	// t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
-	// t.Run("TestHashUpdateTen", testHashUpdateTen)
+	t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
+	t.Run("TestHashInsertTen", testHashInsertTen)
+	t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
+	t.Run("TestHashDeleteTen", testHashDeleteTen)
+	t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
+	t.Run("TestHashUpdateTen", testHashUpdateTen)
 }
 
 func randomTest(t *testing.T){

@@ -82,7 +82,7 @@ func (bucket *HashBucket) Update(key int64, value int64) error {
 
 // Delete the given key-value pair, does not coalesce.
 func (bucket *HashBucket) Delete(key int64) error {
-	target_idx := int64(-1)
+	var target_idx int64
 	// find the index of the target key
 	for i := int64(0); i < bucket.numKeys; i++ {
 		cur_key := bucket.getKeyAt(i)
@@ -92,7 +92,7 @@ func (bucket *HashBucket) Delete(key int64) error {
 		}
 	}
 	// if find
-	if target_idx != int64(-1) {
+	if target_idx >= 0 {
 		// shift the right cells one step forward
 		for j := target_idx; j < bucket.numKeys-1; j++ {
 			next_key := bucket.getKeyAt(j+1)

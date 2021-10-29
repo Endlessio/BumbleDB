@@ -166,40 +166,40 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 		// check := ^(0xFFFFFFFF << new_local_depth) & key_hash
 		// fmt.Println("cur key, cur val", i, cur_key, cur_val, check, new_bucket_64, odd_bucket_64)
 		if check == new_bucket_64 {
-			new_bucket.updateKeyAt(new_bucket.numKeys, cur_key)
-			new_bucket.updateValueAt(new_bucket.numKeys, cur_val)
-			new_bucket.updateNumKeys(new_bucket.numKeys+1)
-			// split, ist_err := new_bucket.Insert(cur_key, cur_val)
-			// // ist_err := table.Insert(cur_key, cur_val)
-			// if ist_err != nil {
-			// 	return errors.New("table/split: cannot insert into new bucket")
-			// }
-			// if split {
-			// 	// fmt.Println("table/split: re-split on new bucket", new_bucket_64)
-			// 	ok := table.Split(new_bucket, new_bucket_64)
-			// 	if ok != nil {
-			// 		return errors.New("table/split: recursive split err")
-			// 	}
-			// }
+			// new_bucket.updateKeyAt(new_bucket.numKeys, cur_key)
+			// new_bucket.updateValueAt(new_bucket.numKeys, cur_val)
+			// new_bucket.updateNumKeys(new_bucket.numKeys+1)
+			split, ist_err := new_bucket.Insert(cur_key, cur_val)
+			// ist_err := table.Insert(cur_key, cur_val)
+			if ist_err != nil {
+				return errors.New("table/split: cannot insert into new bucket")
+			}
+			if split {
+				// fmt.Println("table/split: re-split on new bucket", new_bucket_64)
+				ok := table.Split(new_bucket, new_bucket_64)
+				if ok != nil {
+					return errors.New("table/split: recursive split err")
+				}
+			}
 			// new_bucket.modifyCell(new_bucket.numKeys, HashEntry{cur_key, cur_val})
 			// new_bucket.updateNumKeys(new_bucket.numKeys+1)
 		} else if check == old_bucket_64 {
-			// split, ist_err := bucket.Insert(cur_key, cur_val)
-			// // ist_err := table.Insert(cur_key, cur_val)
-			// if ist_err != nil {
-			// 	return errors.New("table/split: cannot insert into new bucket")
-			// }
-			// if split {
-			// 	// fmt.Println("table/split: re-split on old bucket", old_bucket_64)
-			// 	ok := table.Split(bucket, old_bucket_64)
-			// 	if ok != nil {
-			// 		return errors.New("table/split: recursive split err")
-			// 	}
-			// // 	// fmt.Println("year! 2")
-			// }
-			bucket.updateKeyAt(bucket.numKeys, cur_key)
-			bucket.updateValueAt(bucket.numKeys, cur_val)
-			bucket.updateNumKeys(bucket.numKeys+1)
+			split, ist_err := bucket.Insert(cur_key, cur_val)
+			// ist_err := table.Insert(cur_key, cur_val)
+			if ist_err != nil {
+				return errors.New("table/split: cannot insert into new bucket")
+			}
+			if split {
+				// fmt.Println("table/split: re-split on old bucket", old_bucket_64)
+				ok := table.Split(bucket, old_bucket_64)
+				if ok != nil {
+					return errors.New("table/split: recursive split err")
+				}
+			// 	// fmt.Println("year! 2")
+			}
+			// bucket.updateKeyAt(bucket.numKeys, cur_key)
+			// bucket.updateValueAt(bucket.numKeys, cur_val)
+			// bucket.updateNumKeys(bucket.numKeys+1)
 			// bucket.modifyCell(bucket.numKeys, HashEntry{cur_key, cur_val})
 			// bucket.updateNumKeys(bucket.numKeys+1)
 		} else {
