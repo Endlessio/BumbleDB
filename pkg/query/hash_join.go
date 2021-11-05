@@ -44,33 +44,31 @@ func buildHashIndex(
 	}
 	// Build the hash index.
 	fmt.Println("enter hash_join/buildHashIndex")
-	// // get start cursor
-	// start, err := sourceTable.TableStart()
-	// if err != nil {
-	// 	return nil, "", err
-	// }
-	entrys, err := sourceTable.Select()
+	// get start cursor
+	cursor, err := sourceTable.TableStart()
 	fmt.Println("test1111")
 	if err != nil {
 		return nil, "", err
 	}
 	// before reaching end, do while loop by using stepForward
-	for _, cur_entry := range entrys{
-		// cur_entry, err := start.GetEntry()
+	for !cursor.IsEnd() {
+		cur_entry, err := cursor.GetEntry()
 		fmt.Println("test")
-		fmt.Println("hash_join/probeBuckets: steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
-		// // get the current entry
-		// if err != nil {
-		// 	return nil, "", err
-		// }
+		// get the current entry
+		if err != nil {
+			return nil, "", err
+		}
 		if useKey {
+			fmt.Println("hash_join/probeBuckets: usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 			tempIndex.Insert(cur_entry.GetKey(), cur_entry.GetValue())
 		} else {
+			fmt.Println("hash_join/probeBuckets: not usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 			tempIndex.Insert(cur_entry.GetValue(), cur_entry.GetKey())
 		}
 		// step forward
-		// start.StepForward()
+		cursor.StepForward()
 	}
+	fmt.Println("end hash_join/buildHashIndex")
 	return tempIndex, dbName, nil
 }
 
