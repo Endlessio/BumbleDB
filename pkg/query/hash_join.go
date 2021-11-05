@@ -56,6 +56,7 @@ func buildHashIndex(
 	// before reaching end, do while loop by using stepForward
 	for _, cur_entry := range entrys{
 		// cur_entry, err := start.GetEntry()
+		fmt.Println("test")
 		fmt.Println("hash_join/probeBuckets: steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 		// // get the current entry
 		// if err != nil {
