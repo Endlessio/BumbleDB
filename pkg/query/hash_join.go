@@ -51,6 +51,10 @@ func buildHashIndex(
 	}
 	// before reaching end, do while loop by using stepForward
 	for step_err == nil {
+		if cursor.IsEnd() {
+			step_err = cursor.StepForward()
+			continue
+		}
 		cur_entry, err := cursor.GetEntry()
 		// get the current entry
 		if err != nil {
