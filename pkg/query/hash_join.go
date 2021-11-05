@@ -45,14 +45,12 @@ func buildHashIndex(
 	// Build the hash index.
 	fmt.Println("enter hash_join/buildHashIndex")
 	// get start cursor
-	var step_err error
-	var start utils.Cursor
-	start, step_err = sourceTable.TableStart()
-	if step_err != nil {
+	start, err := sourceTable.TableStart()
+	if err != nil {
 		return nil, "", err
 	}
 	// before reaching end, do while loop by using stepForward
-	for step_err != nil {
+	for !start.IsEnd() {
 		cur_entry, err := start.GetEntry()
 		fmt.Println("hash_join/probeBuckets: steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 		// get the current entry
@@ -65,7 +63,7 @@ func buildHashIndex(
 			tempIndex.Insert(cur_entry.GetValue(), cur_entry.GetKey())
 		}
 		// step forward
-		step_err = start.StepForward()
+		start.StepForward()
 	}
 	return tempIndex, dbName, nil
 }
