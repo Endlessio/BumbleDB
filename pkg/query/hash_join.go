@@ -50,6 +50,7 @@ func buildHashIndex(
 	// 	return nil, "", err
 	// }
 	entrys, err := sourceTable.Select()
+	fmt.Println("test1111")
 	if err != nil {
 		return nil, "", err
 	}
