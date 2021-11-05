@@ -114,7 +114,8 @@ func probeBuckets(
 	}
 	fmt.Println("enter hash_join/probeBuckets: start to create bloom filter")
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
-	fmt.Println("enter hash_join/probeBuckets: start to add entry to bloom filter", len(right_entrys))
+	fmt.Println("enter hash_join/probeBuckets: start to add entry to bloom filter", len(right_entrys), len(left_entrys))
+	// for i:=0; i<int(rBucket); i++ {
 	for _, entry := range right_entrys {
 		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnRightKey, entry.GetKey(), entry.GetValue())
 		if joinOnRightKey {
