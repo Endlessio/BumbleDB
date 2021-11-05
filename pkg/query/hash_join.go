@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 
 	db "github.com/brown-csci1270/db/pkg/db"
 	hash "github.com/brown-csci1270/db/pkg/hash"
@@ -44,26 +45,30 @@ func buildHashIndex(
 	}
 	// Build the hash index.
 	fmt.Println("enter hash_join/buildHashIndex")
-	// get start cursor
-	start, err := sourceTable.TableStart()
+	// // get start cursor
+	// start, err := sourceTable.TableStart()
+	// if err != nil {
+	// 	return nil, "", err
+	// }
+	entrys, err := sourceTable.Select()
 	if err != nil {
 		return nil, "", err
 	}
 	// before reaching end, do while loop by using stepForward
-	for !start.IsEnd() {
-		cur_entry, err := start.GetEntry()
+	for _, cur_entry := range entrys{
+		// cur_entry, err := start.GetEntry()
 		fmt.Println("hash_join/probeBuckets: steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
-		// get the current entry
-		if err != nil {
-			return nil, "", err
-		}
+		// // get the current entry
+		// if err != nil {
+		// 	return nil, "", err
+		// }
 		if useKey {
 			tempIndex.Insert(cur_entry.GetKey(), cur_entry.GetValue())
 		} else {
 			tempIndex.Insert(cur_entry.GetValue(), cur_entry.GetKey())
 		}
 		// step forward
-		start.StepForward()
+		// start.StepForward()
 	}
 	return tempIndex, dbName, nil
 }
