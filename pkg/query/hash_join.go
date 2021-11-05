@@ -118,10 +118,10 @@ func probeBuckets(
 	// for i:=0; i<int(rBucket); i++ {
 	for _, entry := range left_entrys {
 		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnLeftKey, entry.GetKey(), entry.GetValue())
-		if joinOnRightKey {
+		if joinOnLeftKey {
 			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using left key")
 			bloom_filter.Insert(entry.GetKey())
-		} else if !joinOnRightKey {
+		} else if !joinOnLeftKey {
 			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using left value")
 			bloom_filter.Insert(entry.GetValue())
 		} else {
