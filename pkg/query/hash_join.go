@@ -45,27 +45,28 @@ func buildHashIndex(
 	// Build the hash index.
 	fmt.Println("enter hash_join/buildHashIndex")
 	// get start cursor
-	cursor, err := sourceTable.TableStart()
-	if err != nil {
+	cursor, step_err := sourceTable.TableStart()
+	if step_err != nil {
 		return nil, "", err
 	}
 	// before reaching end, do while loop by using stepForward
-	for !cursor.IsEnd() {
+	for step_err == nil {
 		cur_entry, err := cursor.GetEntry()
 		// get the current entry
 		if err != nil {
 			return nil, "", err
 		}
 		if useKey {
-			fmt.Println("hash_join/probeBuckets: usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
+			fmt.Println("hash_join/buildHashIndex: usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 			tempIndex.Insert(cur_entry.GetKey(), cur_entry.GetValue())
 		} else {
-			fmt.Println("hash_join/probeBuckets: not usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
+			fmt.Println("hash_join/buildHashIndex: not usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 			tempIndex.Insert(cur_entry.GetValue(), cur_entry.GetKey())
 		}
 		// step forward
-		step_err := cursor.StepForward()
+		step_err = cursor.StepForward()
 		if step_err != nil {
+			fmt.Println("step_err:", step_err, cur_entry.GetKey(), cur_entry.GetValue())
 			break
 		}
 	}
@@ -105,18 +106,20 @@ func probeBuckets(
 	if err != nil {
 		return err
 	}
-	// create bloom filter for right bucket
+	
 	right_entrys, err := rBucket.Select()
 	if err != nil {
 		return err
 	}
+
+	// create bloom filter for right bucket
 	fmt.Println("enter hash_join/probeBuckets: start to create bloom filter")
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
 	fmt.Println("hash_join/probeBuckets: start to add entry to bloom filter", len(right_entrys),len(left_entrys))
 
-	for _, entry := range right_entrys {
-		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnRightKey, entry.GetKey(), entry.GetValue())
-		bloom_filter.Insert(entry.GetKey())
+	for _, r_entry := range right_entrys {
+		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnRightKey, r_entry.GetKey(), r_entry.GetValue())
+		bloom_filter.Insert(r_entry.GetKey())
 	}
 
 	// iterate the left table
