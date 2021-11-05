@@ -1,24 +1,26 @@
 package test
 
 import (
-	// "fmt"
+	"context"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"testing"
 
 	hash "github.com/brown-csci1270/db/pkg/hash"
+	"github.com/brown-csci1270/db/pkg/query"
 )
 
-type hash_kv struct {
-	key int64
-	val int64
+func TestQueryTA(t *testing.T) {
+	t.Run("TestQuerySimple", testQuerySimple)
+	// t.Run("TestFilterInsertAndCheckSmall", testFilterInsertAndCheckSmall)
 }
 
 // Mod vals by this value to prevent hardcoding tests
-var hash_salt int64 = rand.Int63n(1000)
+var query_salt int64 = rand.Int63n(1000)
 
-func getTempHashDB(t *testing.T) string {
+func getTempQueryDB(t *testing.T) string {
 	tmpfile, err := ioutil.TempFile(".", "db-*")
 	if err != nil {
 		t.Error(err)
@@ -27,401 +29,110 @@ func getTempHashDB(t *testing.T) string {
 	return tmpfile.Name()
 }
 
-func genRandomHashEntries(n int) (entries []hash_kv, answerKey map[int64]int64) {
-	entries = make([]hash_kv, 0)
-	answerKey = make(map[int64]int64)
-	for i := 0; i <= n; i++ {
-	genKey:
-		key := rand.Int63()
-		if _, ok := answerKey[key]; ok {
-			goto genKey
-		}
-		val := rand.Int63()
-		answerKey[key] = val
-		entries = append(entries, hash_kv{key: key, val: val})
+func setupQuery(t *testing.T) (string, string, *hash.HashIndex, *hash.HashIndex) {
+	// Init the first database
+	dbName1 := getTempQueryDB(t)
+	defer os.Remove(dbName1)
+	index1, err := hash.OpenTable(dbName1)
+	if err != nil {
+		t.Error(err)
 	}
-	return entries, answerKey
+
+	// Init the second database
+	dbName2 := getTempQueryDB(t)
+	defer os.Remove(dbName2)
+	index2, err := hash.OpenTable(dbName2)
+	if err != nil {
+		t.Error(err)
+	}
+	return dbName1, dbName2, index1, index2
 }
 
-func TestHashTA(t *testing.T) {
-	t.Run("random", randomTest)
-	t.Run("TestHashInsertTenNoWrite", testHashInsertTenNoWrite)
-	t.Run("TestHashInsertTen", testHashInsertTen)
-	t.Run("TestHashDeleteTenNoWrite", testHashDeleteTenNoWrite)
-	t.Run("TestHashDeleteTen", testHashDeleteTen)
-	t.Run("TestHashUpdateTenNoWrite", testHashUpdateTenNoWrite)
-	t.Run("TestHashUpdateTen", testHashUpdateTen)
+func getresults(t *testing.T, index1 *hash.HashIndex, index2 *hash.HashIndex, joinOnLeftKey bool, joinOnRightKey bool) ([]query.EntryPair, error) {
+	// Create context.
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	// Join the indixes; set up cleanup.
+	resultsChan, _, group, cleanupCallback, err := query.Join(ctx, index1, index2, joinOnLeftKey, joinOnRightKey)
+	if cleanupCallback != nil {
+		defer cleanupCallback()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Iterate through results.
+	done := make(chan bool)
+	results := make([]query.EntryPair, 0)
+	go func() {
+		for {
+			pair, valid := <-resultsChan
+			if !valid {
+				break
+			}
+			results = append(results, pair)
+		}
+		done <- true
+	}()
+
+	// Wait, close, and return.
+	err = group.Wait()
+	close(resultsChan)
+	<-done
+	if err != nil {
+		return nil, fmt.Errorf("join error: %v", err)
+	}
+	return results, nil
 }
 
-func randomTest(t *testing.T){
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
-
-	// Init the database
-	index, err := hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	var arr []int64
-	for i:=0; i<=1200; i++ {
-		rand := rand.Int63n(8674665223082153551)
-		arr = append(arr, rand)
-		// fmt.Println(i, rand)
-		err = index.Insert(rand, rand%hash_salt)
-		if err != nil {
-			t.Error(err)
-		}
-		// fmt.Println("-----------------")
-		// index.Print(os.Stdout)
-	}
-	for j:= 0; j<len(arr); j++ {
-		entry, err := index.Find(arr[j])
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != arr[j] {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != arr[j]%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	index.Close()
+func teardownQuery(dbName1 string, dbName2 string, index1 *hash.HashIndex, index2 *hash.HashIndex) {
+	index1.Close()
+	index2.Close()
+	os.Remove(dbName1 + ".meta")
+	os.Remove(dbName2 + ".meta")
 }
 
-func testHashInsertTenNoWrite(t *testing.T) {
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
+func testQuerySimple(t *testing.T) {
+	// Setup.
+	var err error
+	dbName1, dbName2, index1, index2 := setupQuery(t)
 
-	// Init the database
-	index, err := hash.OpenTable(dbName)
+	// Insert entries.
+	for i := int64(0); i < 10; i++ {
+		err = index1.Insert(i, i%query_salt)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	err = index2.Insert(5, 5%query_salt)
 	if err != nil {
 		t.Error(err)
 	}
-	// Insert entries
-	for i := int64(0); i <= 2300; i++ {
-		err = index.Insert(i, i%hash_salt)
-		if err != nil {
-			t.Error(err)
-		}
-		// fmt.Println("-----------------")
-		// index.Print(os.Stdout)
+	err = index2.Insert(6, 10%query_salt)
+	if err != nil {
+		t.Error(err)
 	}
-	// fmt.Println(hash.BUCKETSIZE)
-	// Retrieve entries
-	for i := int64(0); i <= 2300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != i%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
+
+	// Get and check results.
+	results, err := getresults(t, index1, index2, true, true)
+	if err != nil {
+		t.Error(err)
 	}
-	index.Close()
+	if len(results) != 2 {
+		t.Errorf("basic join not working; expected %v results, got %d\n", 2, len(results))
+	}
+
+	// Cleanup.
+	teardownQuery(dbName1, dbName2, index1, index2)
 }
 
-func testHashInsertTen(t *testing.T) {
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
-
-	// Init the database
-	index, err := hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Insert entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Insert(i, i%hash_salt)
-		if err != nil {
-			t.Error(err)
+func testFilterInsertAndCheckSmall(t *testing.T) {
+	filter := query.CreateFilter(16)
+	for i := 0; i < 10; i++ {
+		filter.Insert(int64(i))
+		if !filter.Contains(int64(i)) {
+			t.Errorf("inserted value %d but not found", i)
 		}
 	}
-	// Close and reopen the database
-	index.Close()
-	index, err = hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != i%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	index.Close()
-}
-
-func testHashDeleteTenNoWrite(t *testing.T) {
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
-
-	// Init the database
-	index, err := hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Insert entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Insert(i, i%hash_salt)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != i%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
-		// Delete this entry
-		index.Delete(i)
-	}
-	// Retrieve deleted entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if entry != nil || err == nil {
-			t.Error("Could find deleted entry")
-		}
-	}
-	index.Close()
-}
-
-func testHashDeleteTen(t *testing.T) {
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
-
-	// Init the database
-	index, err := hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Insert entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Insert(i, i%hash_salt)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	// Close and reopen the database
-	index.Close()
-	index, err = hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != i%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
-		// Delete this entry
-		index.Delete(i)
-	}
-	// Retrieve deleted entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if entry != nil || err == nil {
-			t.Error("Could find deleted entry")
-		}
-	}
-	index.Close()
-}
-
-func testHashUpdateTenNoWrite(t *testing.T) {
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
-
-	// Init the database
-	index, err := hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Insert entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Insert(i, i%hash_salt)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != i%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	// Update entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Update(i, -(i % hash_salt))
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != -(i % hash_salt) {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != -(i % hash_salt) {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	index.Close()
-}
-
-func testHashUpdateTen(t *testing.T) {
-	dbName := getTempHashDB(t)
-	defer os.Remove(dbName)
-	defer os.Remove(dbName + ".meta")
-
-	// Init the database
-	index, err := hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Insert entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Insert(i, i%hash_salt)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != i%hash_salt {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	// Update entries
-	for i := int64(0); i <= 1300; i++ {
-		err = index.Update(i, -(i % hash_salt))
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != -(i % hash_salt) {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	// Close and reopen the database
-	index.Close()
-	index, err = hash.OpenTable(dbName)
-	if err != nil {
-		t.Error(err)
-	}
-	// Retrieve entries
-	for i := int64(0); i <= 1300; i++ {
-		entry, err := index.Find(i)
-		if err != nil {
-			t.Error(err)
-		}
-		if entry == nil {
-			t.Error("Inserted entry could not be found")
-		}
-		if entry.GetKey() != i {
-			t.Error("Entry with wrong entry was found")
-		}
-		if entry.GetValue() != -(i % hash_salt) {
-			t.Error("Entry found has the wrong value")
-		}
-	}
-	index.Close()
 }

@@ -2,6 +2,7 @@ package btree
 
 import (
 	"errors"
+	"fmt"
 
 	utils "github.com/brown-csci1270/db/pkg/utils"
 )
@@ -17,6 +18,7 @@ type BTreeCursor struct {
 
 // TableStart returns a cursor pointing to the first entry of the table.
 func (table *BTreeIndex) TableStart() (utils.Cursor, error) {
+	fmt.Println("btree/cursor/tablestart: using btree cursor")
 	cursor := BTreeCursor{table: table, cellnum: 0}
 	// Get the root page.
 	curPage, err := table.pager.GetPage(table.rootPN)
@@ -77,7 +79,6 @@ func (table *BTreeIndex) TableEnd() (utils.Cursor, error) {
 // If the key is not found, returns a cursor to the new insertion position.
 // Hint: use keyToNodeEntry
 func (table *BTreeIndex) TableFind(key int64) (utils.Cursor, error) {
-	
 	cursor := BTreeCursor{table: table, cellnum: 0}
 	// Get the root page.
 	curPage, err := table.pager.GetPage(table.rootPN)

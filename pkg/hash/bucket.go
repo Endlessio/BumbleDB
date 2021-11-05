@@ -21,7 +21,6 @@ func NewHashBucket(pager *pager.Pager, depth int64) (*HashBucket, error) {
 	newPN := pager.GetFreePN()
 	newPage, err := pager.GetPage(newPN)
 	if err != nil {
-		// fmt.Println("bucket/new hash bucket", newPN)
 		return nil, err
 	}
 	bucket := &HashBucket{depth: depth, numKeys: 0, page: newPage}
@@ -41,83 +40,77 @@ func (bucket *HashBucket) GetPage() *pager.Page {
 
 // Finds the entry with the given key.
 func (bucket *HashBucket) Find(key int64) (utils.Entry, bool) {
-	for i:= 0; i < int(bucket.numKeys); i++ {
-		cur_entry := bucket.getCell(int64(i))
-		if key == cur_entry.GetKey() {
-			return cur_entry, true
+	/* SOLUTION {{{ */
+	for i := int64(0); i < bucket.numKeys; i++ {
+		if bucket.getKeyAt(i) == key {
+			return bucket.getCell(i), true
 		}
 	}
 	return nil, false
+	/* SOLUTION }}} */
 }
-
 
 // Inserts the given key-value pair, splits if necessary.
 func (bucket *HashBucket) Insert(key int64, value int64) (bool, error) {
-	// no enough space
-	if bucket.numKeys == BUCKETSIZE {
-		// bucket.modifyCell(bucket.numKeys, HashEntry{key, value})
-		// bucket.updateDepth(bucket.GetDepth()+1)
-		bucket.updateNumKeys(0)
-		return true, nil
-	} else if bucket.numKeys < BUCKETSIZE {
-		bucket.modifyCell(bucket.numKeys, HashEntry{key, value})
-		bucket.updateNumKeys(bucket.numKeys+1)
-		return false, nil
-	} else {
-		return false, errors.New("bucket/insert: the depth is larger than BUCKETSIZE")
-	}
+	/* SOLUTION {{{ */
+	bucket.modifyCell(bucket.numKeys, HashEntry{key: key, value: value})
+	bucket.updateNumKeys(bucket.numKeys + 1)
+	return bucket.numKeys >= BUCKETSIZE, nil
+	/* SOLUTION }}} */
 }
 
 // Update the given key-value pair, should never split.
 func (bucket *HashBucket) Update(key int64, value int64) error {
-	for i:= int64(0); i < bucket.numKeys; i++ {
-		cur_key := bucket.getKeyAt(i)
-		if key == cur_key {
-			bucket.updateValueAt(i, value)
-			return nil
+	/* SOLUTION {{{ */
+	// Get the index to update.
+	index := int64(-1)
+	for i := int64(0); i < bucket.numKeys; i++ {
+		if bucket.getKeyAt(i) == key {
+			index = i
+			break
 		}
 	}
-	return errors.New("bucket/update: the key is not find in current bucket")
+	if index == -1 {
+		return errors.New("key not found, update aborted")
+	}
+	// Update the value.
+	bucket.updateValueAt(index, value)
+	return nil
+	/* SOLUTION }}} */
 }
 
 // Delete the given key-value pair, does not coalesce.
 func (bucket *HashBucket) Delete(key int64) error {
-	var target_idx int64
-	// find the index of the target key
+	/* SOLUTION {{{ */
+	// Get the index to delete.
+	index := int64(-1)
 	for i := int64(0); i < bucket.numKeys; i++ {
-		cur_key := bucket.getKeyAt(i)
-		if cur_key == key {
-			target_idx = i
+		if bucket.getKeyAt(i) == key {
+			index = i
 			break
 		}
 	}
-	// if find
-	if target_idx >= 0 {
-		// shift the right cells one step forward
-		for j := target_idx; j < bucket.numKeys-1; j++ {
-			next_key := bucket.getKeyAt(j+1)
-			next_val := bucket.getValueAt(j+1)
-			bucket.updateKeyAt(j, next_key)
-			bucket.updateValueAt(j, next_val)
-		}
-		// update the key number
-		bucket.updateNumKeys(bucket.numKeys-1)
-		return nil
-	// if not find
-	} else {
-		return errors.New("bucket/delete: the target delete key is not found in current bucket")
+	if index == -1 {
+		return errors.New("key not found, delete aborted")
 	}
+	// Move all other keys left by one.
+	for i := index; i < bucket.numKeys; i++ {
+		bucket.modifyCell(i, bucket.getCell(i+1))
+	}
+	bucket.updateNumKeys(bucket.numKeys - 1)
+	return nil
+	/* SOLUTION }}} */
 }
 
 // Select all entries in this bucket.
-// TODO: when should return error
 func (bucket *HashBucket) Select() ([]utils.Entry, error) {
-	var res []utils.Entry
+	/* SOLUTION {{{ */
+	ret := make([]utils.Entry, 0)
 	for i := int64(0); i < bucket.numKeys; i++ {
-		cur_entry := bucket.getCell(i)
-		res = append(res, cur_entry)
+		ret = append(ret, bucket.getCell(i))
 	}
-	return res, nil
+	return ret, nil
+	/* SOLUTION }}} */
 }
 
 // Pretty-print this bucket.

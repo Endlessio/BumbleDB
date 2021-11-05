@@ -2,6 +2,7 @@ package btree
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
 	pager "github.com/brown-csci1270/db/pkg/pager"
@@ -155,6 +156,7 @@ func (table *BTreeIndex) Delete(key int64) error {
 
 // Select returns a slice of all entries in the table.
 func (table *BTreeIndex) Select() ([]utils.Entry, error) {
+	fmt.Println("enter btree select")
 	var res []utils.Entry
 	start_cursor, err1 := table.TableStart()
 	end_cursor, err2 := table.TableEnd()

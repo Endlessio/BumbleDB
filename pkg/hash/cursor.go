@@ -2,6 +2,7 @@ package hash
 
 import (
 	"errors"
+	"fmt"
 
 	utils "github.com/brown-csci1270/db/pkg/utils"
 )
@@ -16,6 +17,7 @@ type HashCursor struct {
 
 // TableStart returns a cursor to the first entry in the hash table.
 func (table *HashIndex) TableStart() (utils.Cursor, error) {
+	fmt.Println("hash/cursor/tablestart: using hash cursor")
 	cursor := HashCursor{table: table, cellnum: 0}
 
 	curPage, err := table.pager.GetPage(ROOT_PN)
