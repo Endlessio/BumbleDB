@@ -112,7 +112,9 @@ func probeBuckets(
 	if err != nil {
 		return err
 	}
+	fmt.Println("enter hash_join/probeBuckets: start to create bloom filter")
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
+	fmt.Println("enter hash_join/probeBuckets: start to add entry to bloom filter")
 	for _, entry := range right_entrys {
 		if joinOnRightKey {
 			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using right key")
