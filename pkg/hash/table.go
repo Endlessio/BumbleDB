@@ -216,7 +216,7 @@ func (table *HashTable) Insert(key int64, value int64) error {
 	// fmt.Println("table/insert", key, value)
 	hashed_key := Hasher(key, table.GetDepth())
 	// hash := ^(0xFFFFFFFF << table.depth) & hashed_key
-	fmt.Println("table/insert", key, hashed_key, table.GetDepth())
+	fmt.Println("table/insert", key, value)
 	cur_bucket, ok := table.GetBucket(hashed_key)
 	if ok != nil {
 		return errors.New("table/insert: cannot find the bucket")

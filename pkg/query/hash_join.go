@@ -43,17 +43,19 @@ func buildHashIndex(
 		return nil, "", err
 	}
 	// Build the hash index.
+	fmt.Println("enter hash_join/buildHashIndex")
 	// get start cursor
 	var step_err error
 	var start utils.Cursor
 	start, step_err = sourceTable.TableStart()
-	if err != nil {
+	if step_err != nil {
 		return nil, "", err
 	}
 	// before reaching end, do while loop by using stepForward
 	for step_err != nil {
-		// get the current entry
 		cur_entry, err := start.GetEntry()
+		fmt.Println("hash_join/probeBuckets: steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
+		// get the current entry
 		if err != nil {
 			return nil, "", err
 		}
@@ -94,6 +96,7 @@ func probeBuckets(
 	defer lBucket.GetPage().Put()
 	defer rBucket.GetPage().Put()
 	// Probe buckets.
+	fmt.Println("enter hash_join/probeBuckets")
 	// get the left bucket entrys
 	left_entrys, err := lBucket.Select()
 	if err != nil {
@@ -107,8 +110,10 @@ func probeBuckets(
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
 	for _, entry := range right_entrys {
 		if joinOnRightKey {
+			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using right key")
 			bloom_filter.Insert(entry.GetKey())
 		} else if !joinOnRightKey {
+			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using right value")
 			bloom_filter.Insert(entry.GetValue())
 		} else {
 			return errors.New("hash_join/probeBuckets: create right bloom filter, joinOnRightKey invalid")
