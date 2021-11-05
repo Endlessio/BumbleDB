@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	db "github.com/brown-csci1270/db/pkg/db"
@@ -123,9 +124,11 @@ func probeBuckets(
 		}
 		
 		if contain {
+			fmt.Println("hash_join/probebucket: contain!")
 			// left: key, right: key
 			if joinOnLeftKey && joinOnRightKey{
 				// start to iterate the right bucket
+				fmt.Println("hash_join/probebucket: left-key, right-key")
 				for _, r_entry := range right_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
 						left := hash.HashEntry{}
@@ -139,6 +142,7 @@ func probeBuckets(
 				}
 			// left: value, right: value
 			} else if !joinOnLeftKey && !joinOnRightKey {
+				fmt.Println("hash_join/probebucket: left-value, right-value")
 				// start to iterate the right bucket
 				for _, r_entry := range right_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
@@ -153,6 +157,7 @@ func probeBuckets(
 				}
 			// left: key, right: value
 			} else if joinOnLeftKey && !joinOnRightKey{
+				fmt.Println("hash_join/probebucket: left-key, right-value")
 				// start to iterate the right bucket
 				for _, r_entry := range right_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
@@ -167,6 +172,7 @@ func probeBuckets(
 				}
 			// left: value, right: key
 			} else if !joinOnLeftKey && joinOnRightKey{
+				fmt.Println("hash_join/probebucket: left-value, right-key")
 				// start to iterate the right bucket
 				for _, r_entry := range right_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
