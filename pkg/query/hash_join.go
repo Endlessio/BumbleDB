@@ -116,25 +116,25 @@ func probeBuckets(
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
 	fmt.Println("enter hash_join/probeBuckets: start to add entry to bloom filter", len(right_entrys), len(left_entrys))
 	// for i:=0; i<int(rBucket); i++ {
-	for _, entry := range right_entrys {
-		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnRightKey, entry.GetKey(), entry.GetValue())
+	for _, entry := range left_entrys {
+		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnLeftKey, entry.GetKey(), entry.GetValue())
 		if joinOnRightKey {
-			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using right key")
+			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using left key")
 			bloom_filter.Insert(entry.GetKey())
 		} else if !joinOnRightKey {
-			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using right value")
+			fmt.Println("hash_join/probeBuckets: bloom fliter constructing using left value")
 			bloom_filter.Insert(entry.GetValue())
 		} else {
 			return errors.New("hash_join/probeBuckets: create right bloom filter, joinOnRightKey invalid")
 		}
 	}
 	// iterate the left table
-	for _, l_entry := range left_entrys {
+	for _, r_entry := range right_entrys {
 		var contain bool
-		if joinOnLeftKey {
-			contain = bloom_filter.Contains(l_entry.GetKey())
+		if joinOnRightKey {
+			contain = bloom_filter.Contains(r_entry.GetKey())
 		} else {
-			contain = bloom_filter.Contains(l_entry.GetValue())
+			contain = bloom_filter.Contains(r_entry.GetValue())
 		}
 		
 		if contain {
@@ -143,7 +143,7 @@ func probeBuckets(
 			if joinOnLeftKey && joinOnRightKey{
 				// start to iterate the right bucket
 				fmt.Println("hash_join/probebucket: left-key, right-key")
-				for _, r_entry := range right_entrys {
+				for _, l_entry := range left_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
 						left := hash.HashEntry{}
 						left.SetKey(l_entry.GetKey())
@@ -158,7 +158,7 @@ func probeBuckets(
 			} else if !joinOnLeftKey && !joinOnRightKey {
 				fmt.Println("hash_join/probebucket: left-value, right-value")
 				// start to iterate the right bucket
-				for _, r_entry := range right_entrys {
+				for _, l_entry := range left_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
 						left := hash.HashEntry{}
 						left.SetKey(l_entry.GetValue())
@@ -173,7 +173,7 @@ func probeBuckets(
 			} else if joinOnLeftKey && !joinOnRightKey{
 				fmt.Println("hash_join/probebucket: left-key, right-value")
 				// start to iterate the right bucket
-				for _, r_entry := range right_entrys {
+				for _, l_entry := range left_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
 						left := hash.HashEntry{}
 						left.SetKey(l_entry.GetKey())
@@ -188,7 +188,7 @@ func probeBuckets(
 			} else if !joinOnLeftKey && joinOnRightKey{
 				fmt.Println("hash_join/probebucket: left-value, right-key")
 				// start to iterate the right bucket
-				for _, r_entry := range right_entrys {
+				for _, l_entry := range left_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
 						left := hash.HashEntry{}
 						left.SetKey(l_entry.GetValue())
