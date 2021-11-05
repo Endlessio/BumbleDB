@@ -122,7 +122,7 @@ func probeBuckets(
 	}
 
 	// iterate the left table
-	for _, l_entry := range left_entrys {
+	for idx, l_entry := range left_entrys {
 		var contain bool
 		if joinOnLeftKey {
 			contain = bloom_filter.Contains(l_entry.GetKey())
@@ -131,7 +131,7 @@ func probeBuckets(
 		}
 		
 		if contain {
-			fmt.Println("hash_join/probebucket: contain!")
+			fmt.Println(idx, "iteration, contain")
 			// left: key, right: key
 			if joinOnLeftKey && joinOnRightKey{
 				// start to iterate the right bucket
