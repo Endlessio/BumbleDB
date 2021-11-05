@@ -43,7 +43,6 @@ func buildHashIndex(
 		return nil, "", err
 	}
 	// Build the hash index.
-	fmt.Println("enter hash_join/buildHashIndex")
 	// get start cursor
 	cursor, step_err := sourceTable.TableStart()
 	if step_err != nil {
@@ -61,20 +60,19 @@ func buildHashIndex(
 			return nil, "", err
 		}
 		if useKey {
-			fmt.Println("hash_join/buildHashIndex: usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
+			// fmt.Println("hash_join/buildHashIndex: usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 			tempIndex.Insert(cur_entry.GetKey(), cur_entry.GetValue())
 		} else {
-			fmt.Println("hash_join/buildHashIndex: not usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
+			// fmt.Println("hash_join/buildHashIndex: not usekey, steping forward, entry: ", cur_entry.GetKey(), cur_entry.GetValue())
 			tempIndex.Insert(cur_entry.GetValue(), cur_entry.GetKey())
 		}
 		// step forward
 		step_err = cursor.StepForward()
-		if step_err != nil {
-			fmt.Println("step_err:", step_err, cur_entry.GetKey(), cur_entry.GetValue())
-			break
-		}
+		// if step_err != nil {
+		// 	// fmt.Println("step_err:", step_err, cur_entry.GetKey(), cur_entry.GetValue())
+		// 	break
+		// }
 	}
-	fmt.Println("end hash_join/buildHashIndex")
 	return tempIndex, dbName, nil
 }
 
@@ -117,12 +115,9 @@ func probeBuckets(
 	}
 
 	// create bloom filter for right bucket
-	fmt.Println("enter hash_join/probeBuckets: start to create bloom filter")
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
-	fmt.Println("hash_join/probeBuckets: start to add entry to bloom filter", len(right_entrys),len(left_entrys))
 
 	for _, r_entry := range right_entrys {
-		fmt.Println("enter hash_join/probeBuckets: in loop: ", joinOnRightKey, r_entry.GetKey(), r_entry.GetValue())
 		bloom_filter.Insert(r_entry.GetKey())
 	}
 

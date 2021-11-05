@@ -99,19 +99,15 @@ func testQuerySimple(t *testing.T) {
 	dbName1, dbName2, index1, index2 := setupQuery(t)
 
 	// Insert entries.
-	for i := int64(0); i < 10; i++ {
-		err = index1.Insert(i, i%query_salt)
+	for i := int64(0); i < 128; i++ {
+		err = index1.Insert(0, i%query_salt)
 		if err != nil {
 			t.Error(err)
 		}
-	}
-	err = index2.Insert(5, 5%query_salt)
-	if err != nil {
-		t.Error(err)
-	}
-	err = index2.Insert(6, 10%query_salt)
-	if err != nil {
-		t.Error(err)
+		err = index2.Insert(0, i%query_salt)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	// Get and check results.
@@ -119,7 +115,7 @@ func testQuerySimple(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(results) != 2 {
+	if len(results) != 16384 {
 		t.Errorf("basic join not working; expected %v results, got %d\n", 2, len(results))
 	}
 
