@@ -66,7 +66,10 @@ func buildHashIndex(
 			tempIndex.Insert(cur_entry.GetValue(), cur_entry.GetKey())
 		}
 		// step forward
-		cursor.StepForward()
+		err = cursor.StepForward()
+		if err != nil {
+			return nil, "", err
+		}
 	}
 	fmt.Println("end hash_join/buildHashIndex")
 	return tempIndex, dbName, nil
