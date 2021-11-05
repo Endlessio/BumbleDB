@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 
 	db "github.com/brown-csci1270/db/pkg/db"
 	hash "github.com/brown-csci1270/db/pkg/hash"
