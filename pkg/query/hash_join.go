@@ -138,7 +138,7 @@ func probeBuckets(
 				fmt.Println("hash_join/probebucket: left-key, right-key")
 				for idx2, r_entry := range right_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
-						fmt.Println("equal", idx, idx2)
+						// fmt.Println("equal", idx, idx2)
 						left := hash.HashEntry{}
 						left.SetKey(l_entry.GetKey())
 						left.SetValue(l_entry.GetValue())
@@ -147,6 +147,7 @@ func probeBuckets(
 						right.SetValue(r_entry.GetValue())
 						err := sendResult(ctx, resultsChan, EntryPair{left, right})
 						if err != nil {
+							fmt.Println("errrrr", idx, idx2, left.GetKey(), left.GetValue(), right.GetKey(), right.GetValue())
 							return err
 						}
 					}
