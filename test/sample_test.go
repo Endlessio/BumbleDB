@@ -14,7 +14,7 @@ import (
 
 func TestQueryTA(t *testing.T) {
 	t.Run("TestQuerySimple", testQuerySimple)
-	// t.Run("TestFilterInsertAndCheckSmall", testFilterInsertAndCheckSmall)
+	t.Run("TestFilterInsertAndCheckSmall", testFilterInsertAndCheckSmall)
 }
 
 // Mod vals by this value to prevent hardcoding tests
@@ -108,6 +108,14 @@ func testQuerySimple(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		// err = index1.Insert(0, i%query_salt)
+		// if err != nil {
+		// 	t.Error(err)
+		// }
+		// err = index2.Insert(0, i%query_salt)
+		// if err != nil {
+		// 	t.Error(err)
+		// }
 	}
 
 	// Get and check results.

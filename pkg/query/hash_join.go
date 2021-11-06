@@ -113,7 +113,7 @@ func probeBuckets(
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("length", len(left_entrys), len(right_entrys))
 	// create bloom filter for right bucket
 	bloom_filter := CreateFilter(DEFAULT_FILTER_SIZE)
 
