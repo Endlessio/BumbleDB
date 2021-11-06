@@ -136,8 +136,9 @@ func probeBuckets(
 			if joinOnLeftKey && joinOnRightKey{
 				// start to iterate the right bucket
 				fmt.Println("hash_join/probebucket: left-key, right-key")
-				for _, r_entry := range right_entrys {
+				for idx2, r_entry := range right_entrys {
 					if l_entry.GetKey() == r_entry.GetKey() {
+						fmt.Println("equal", idx, idx2)
 						left := hash.HashEntry{}
 						left.SetKey(l_entry.GetKey())
 						left.SetValue(l_entry.GetValue())
