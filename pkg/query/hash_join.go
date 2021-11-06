@@ -123,12 +123,7 @@ func probeBuckets(
 
 	// iterate the left table
 	for idx, l_entry := range left_entrys {
-		var contain bool
-		if joinOnLeftKey {
-			contain = bloom_filter.Contains(l_entry.GetKey())
-		} else {
-			contain = bloom_filter.Contains(l_entry.GetValue())
-		}
+		contain := bloom_filter.Contains(l_entry.GetKey())
 		
 		if contain {
 			fmt.Println(idx, "iteration, contain")
