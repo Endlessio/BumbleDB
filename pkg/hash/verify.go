@@ -1,6 +1,7 @@
 package hash
 
-func IsHash(table *HashTable) (bool, error) {
+func IsHash(index *HashIndex) (bool, error) {
+	table := index.GetTable()
 	buckets := table.GetBuckets()
 	for _, pn := range buckets {
 		// Get bucket

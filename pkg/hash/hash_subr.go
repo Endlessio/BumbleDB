@@ -107,6 +107,8 @@ func (bucket *HashBucket) updateNumKeys(nKeys int64) {
 
 // Convert a page into a bucket.
 func pageToBucket(page *pager.Page) *HashBucket {
+	page.RLock()
+	defer page.RUnlock()
 	depth, _ := binary.Varint(
 		(*page.GetData())[DEPTH_OFFSET : DEPTH_OFFSET+DEPTH_SIZE],
 	)

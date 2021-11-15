@@ -72,23 +72,30 @@ func (table *HashTable) GetPager() *pager.Pager {
 // Finds the entry with the given key.
 func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	/* SOLUTION {{{ */
+	table.RLock()
 	// Hash the key.
 	hash := Hasher(key, table.depth)
 	if hash < 0 || int(hash) >= len(table.buckets) {
+		table.RUnlock()
 		return nil, errors.New("not found")
 	}
 	// Get the corresponding bucket.
 	bucket, err := table.GetBucket(hash)
 	if err != nil {
+		table.RUnlock()
 		return nil, err
 	}
 	defer bucket.page.Put()
+	bucket.RLock()
+	table.RUnlock()
 
 	// Find the entry.
 	entry, found := bucket.Find(key)
 	if !found {
+		bucket.RUnlock()
 		return nil, errors.New("not found")
 	}
+	bucket.RUnlock()
 	return entry, nil
 	/* SOLUTION }}} */
 }
@@ -157,21 +164,40 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 func (table *HashTable) Insert(key int64, value int64) error {
 	/* SOLUTION {{{ */
 	fmt.Println("hash/table/insert: key, value", key, value)
+	table.RLock()
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash)
 	if err != nil {
+		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
+	bucket.WLock()
+	// check not split: unlock table
+	if bucket.numKeys+1 < BUCKETSIZE {
+		table.RUnlock()
+	}
 
 	split, err := bucket.Insert(key, value)
 	if err != nil {
+		if split {
+			// when split, the table has NOT been unlocked
+			defer table.RUnlock()
+		}
+		// unlock the bucket
+		bucket.WUnlock()
 		return err
 	}
 	if !split {
+		// at this time, the table has been unlocked
+		// only unlock the bucket
+		bucket.WUnlock()
 		return nil
 	}
 
+	// get here, it is the case of split, wanna make sure the recursion is done using defer
+	defer table.RUnlock()
+	defer bucket.WUnlock()
 	return table.Split(bucket, hash)
 	/* SOLUTION }}} */
 }
@@ -179,45 +205,66 @@ func (table *HashTable) Insert(key int64, value int64) error {
 // Update the given key-value pair.
 func (table *HashTable) Update(key int64, value int64) error {
 	/* SOLUTION {{{ */
+	table.RLock()
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash)
 	if err != nil {
+		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	return bucket.Update(key, value)
+	bucket.WLock()
+	table.RUnlock()
+
+	res := bucket.Update(key, value)
+	bucket.WUnlock()
+	return res
 	/* SOLUTION }}} */
 }
 
 // Delete the given key-value pair, does not coalesce.
 func (table *HashTable) Delete(key int64) error {
 	/* SOLUTION {{{ */
+	table.RLock()
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash)
 	if err != nil {
+		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	return bucket.Delete(key)
+	bucket.WLock()
+	table.RUnlock()
+
+	res:=bucket.Delete(key)
+	bucket.WUnlock()
+	return res
 	/* SOLUTION }}} */
 }
 
 // Select all entries in this table.
 func (table *HashTable) Select() ([]utils.Entry, error) {
 	/* SOLUTION {{{ */
+	table.RLock()
 	ret := make([]utils.Entry, 0)
 	for i := int64(0); i < table.pager.GetNumPages(); i++ {
 		bucket, err := table.GetBucketByPN(i)
 		if err != nil {
+			table.RUnlock()
 			return nil, err
 		}
+		bucket.RLock()
 		entries, err := bucket.Select()
 		bucket.GetPage().Put()
 		if err != nil {
+			bucket.RUnlock()
+			table.RUnlock()
 			return nil, err
 		}
 		ret = append(ret, entries...)
+		bucket.RUnlock()
 	}
+	table.RUnlock()
 	return ret, nil
 	/* SOLUTION }}} */
 }
