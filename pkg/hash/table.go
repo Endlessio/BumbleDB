@@ -163,7 +163,7 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 // Inserts the given key-value pair, splits if necessary.
 func (table *HashTable) Insert(key int64, value int64) error {
 	/* SOLUTION {{{ */
-	fmt.Println("hash/table/insert: key, value", key, value)
+	// fmt.Println("hash/table/insert: key, value", key, value)
 	table.RLock()
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash)
