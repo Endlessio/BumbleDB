@@ -242,7 +242,7 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 		// node.unlock()
 		split_check = node.insertSplit(split_check)
 	} else {
-		defer node.unlockParent(true)
+		// defer node.unlockParent(true)
 		node.unlockParent(true)
 	}
 	return split_check
