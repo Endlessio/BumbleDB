@@ -79,6 +79,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	}
 	if node.numKeys>ENTRIES_PER_LEAF_NODE {
 		res := node.split()
+		node.unlockParent(true)
 		return res
 	} else {
 		return Split{isSplit: false}
@@ -236,7 +237,7 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 		node.unlock()
 		split_check = node.insertSplit(split_check)
 	} else {
-		node.unlockParent(true)
+		defer node.unlockParent(true)
 	}
 	return split_check
 }
