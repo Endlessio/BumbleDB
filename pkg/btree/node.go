@@ -50,6 +50,8 @@ func (node *LeafNode) search(key int64) int64 {
 // insert finds the appropriate place in a leaf node to insert a new tuple.
 // if update is true, allow overwriting existing keys. else, error.
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
+	node.unlockParent(false)
+	defer node.unlock()
 	idx := node.search(key)
 
 	if idx < node.numKeys && node.getKeyAt(idx) == key {
@@ -85,6 +87,8 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 
 // delete removes a given tuple from the leaf node, if the given key exists.
 func (node *LeafNode) delete(key int64) {
+	node.unlockParent(true)
+	defer node.unlock()
 	ind := node.search(key)
 	// exist 
 	if ind < node.numKeys && node.getKeyAt(ind) == key{
@@ -135,6 +139,8 @@ func (node *LeafNode) split() Split {
 
 // get returns the value associated with a given key from the leaf node.
 func (node *LeafNode) get(key int64) (value int64, found bool) {
+	node.unlockParent(true)
+	defer node.unlock()
 	index := node.search(key)
 	if index >= node.numKeys || node.getKeyAt(index) != key {
 		// Thank you Mario! But our key is in another castle!
@@ -217,18 +223,21 @@ func (node *InternalNode) search(key int64) int64 {
 
 // insert finds the appropriate place in a leaf node to insert a new tuple.
 func (node *InternalNode) insert(key int64, value int64, update bool) Split {
+	node.unlockParent(false)
 	index := node.search(key)
 	child, err := node.getChildAt(index, true)
 	if err != nil {
 		return Split{err: errors.New("node/insert internal: get child error")}
 	}
+	node.initChild(child)
 	defer child.getPage().Put()
 	split_check := child.insert(key, value, update)
-	// update the key number
-	// node.updateNumKeys(node.numKeys+1)
 	if split_check.isSplit {
+		node.unlock()
 		split_check = node.insertSplit(split_check)
-	} 
+	} else {
+		node.unlockParent(true)
+	}
 	return split_check
 }
 
@@ -269,12 +278,14 @@ func (node *InternalNode) insertSplit(split Split) Split {
 
 // delete removes a given tuple from the leaf node, if the given key exists.
 func (node *InternalNode) delete(key int64) {
+	node.unlockParent(true)
 	index := node.search(key)
 	child, err := node.getChildAt(index, true)
 	if err != nil {
 		return
 	}
 	defer child.getPage().Put()
+	node.initChild(child)
 	child.delete(key)
 } 
 
@@ -314,11 +325,15 @@ func (node *InternalNode) split() Split {
 
 // get returns the value associated with a given key from the leaf node.
 func (node *InternalNode) get(key int64) (value int64, found bool) {
+	node.unlockParent(true)
 	childIdx := node.search(key)
 	child, err := node.getChildAt(childIdx, true)
 	if err != nil {
+		// ??? unlock the parent, if err, do we need to re-lock the parent, if so, how
 		return 0, false
 	}
+	// the gearup says the function is lockchild, but not exist, initchild instead?
+	node.initChild(child)
 	defer child.getPage().Put()
 	return child.get(key)
 }

@@ -24,8 +24,8 @@ func TestConcurrencyTA(t *testing.T) {
 	// t.Run("TestTransactionDeadlock", testTransactionDeadlock)
 	// t.Run("TestDeadlockSimple", testDeadlockSimple)
 	// t.Run("TestDeadlockDAG", testDeadlockDAG)
-	t.Run("TestConcurrentHashInsert", testConcurrentHashInsert)
-	// t.Run("TestConcurrentBTreeInsert", testConcurrentBTreeInsert)
+	// t.Run("TestConcurrentHashInsert", testConcurrentHashInsert)
+	t.Run("TestConcurrentBTreeInsert", testConcurrentBTreeInsert)
 }
 
 type LockData struct {

@@ -164,29 +164,18 @@ func (table *HashTable) Split(bucket *HashBucket, hash int64) error {
 func (table *HashTable) Insert(key int64, value int64) error {
 	/* SOLUTION {{{ */
 	// fmt.Println("hash/table/insert: key, value", key, value)
-	// table.RLock()
 	table.WLock()
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash)
 	if err != nil {
 		table.WUnlock()
-		// table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
 	bucket.WLock()
-	// // check split: unlock the read lock and add write lock
-	// if bucket.numKeys+1 >= BUCKETSIZE {
-	// 	table.RUnlock()
-	// 	table.WLock()
-	// }
 
 	split, err := bucket.Insert(key, value)
 	if err != nil {
-		// if split {
-		// 	// when split, the table has NOT been unlocked
-		// 	table.WUnlock()
-		// }
 		// unlock the bucket
 		table.WUnlock()
 		bucket.WUnlock()
@@ -196,7 +185,6 @@ func (table *HashTable) Insert(key int64, value int64) error {
 		// at this time, the table has been unlocked
 		// only unlock the bucket
 		bucket.WUnlock()
-		// table.RUnlock()
 		table.WUnlock()
 		return nil
 	}
