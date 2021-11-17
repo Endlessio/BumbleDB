@@ -67,7 +67,34 @@ func (g *Graph) RemoveEdge(from *Transaction, to *Transaction) error {
 func (g *Graph) DetectCycle() bool {
 	g.RLock()
 	defer g.RUnlock()
-	panic("function not yet implemented");
+	edges := g.edges
+	length := len(edges)
+	trans := map[*Transaction]bool{}
+	trans_list := make([]*Transaction, 0)
+	parent_list := make([]int, 0)
+
+	for i:=0; i<length; i++ {
+		cur_edge := edges[i]
+		_, ok1 := trans[cur_edge.from]
+		_, ok2 := trans[cur_edge.to]
+		if !ok1 {
+			trans[cur_edge.from] = true
+			trans_list = append(trans_list, cur_edge.from)
+			parent_list = append(parent_list, -1)
+		}
+		if !ok2 {
+			trans[cur_edge.to] = true
+			trans_list = append(trans_list, cur_edge.to)
+			parent_list = append(parent_list, -1)
+		}
+		from_tran := getIndex(trans_list, cur_edge.from)
+		to_tran := getIndex(trans_list, cur_edge.to)
+		_, exist := union(parent_list, from_tran, to_tran)
+		if exist {
+			return true
+		} 
+	}
+	return false
 }
 
 // Finds the top-most parent of `t`.
@@ -78,7 +105,7 @@ func find(parent []int, t int) int {
 	return find(parent, parent[t])
 }
 
-// Unions the sets that `t1` and `t2` ar ein. Returns true if the two are the same set.
+// Unions the sets that `t1` and `t2` are in. Returns true if the two are the same set.
 func union(parent []int, t1 int, t2 int) ([]int, bool) {
 	p1 := find(parent, t1)
 	p2 := find(parent, t2)

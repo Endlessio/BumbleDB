@@ -71,7 +71,6 @@ func (table *HashTable) GetPager() *pager.Pager {
 
 // Finds the entry with the given key.
 func (table *HashTable) Find(key int64) (utils.Entry, error) {
-	/* SOLUTION {{{ */
 	table.RLock()
 	// Hash the key.
 	hash := Hasher(key, table.depth)
@@ -97,7 +96,6 @@ func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	}
 	bucket.RUnlock()
 	return entry, nil
-	/* SOLUTION }}} */
 }
 
 // ExtendTable increases the global depth of the table by 1.
