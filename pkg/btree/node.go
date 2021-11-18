@@ -52,7 +52,7 @@ func (node *LeafNode) search(key int64) int64 {
 func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	node.unlockParent(false)
 	idx := node.search(key)
-	// defer node.unlock()
+	defer node.unlock()
 	if idx < node.numKeys && node.getKeyAt(idx) == key {
 		if update {
 			node.updateValueAt(idx, value)
@@ -81,7 +81,6 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	}
 	if node.numKeys>ENTRIES_PER_LEAF_NODE {
 		res := node.split()
-		node.unlock()
 		// defer node.unlockParent(true)
 		return res
 	} else {
