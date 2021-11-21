@@ -5,7 +5,7 @@ func IsHash(index *HashIndex) (bool, error) {
 	buckets := table.GetBuckets()
 	for _, pn := range buckets {
 		// Get bucket
-		bucket, err := table.GetBucketByPN(pn)
+		bucket, err := table.GetBucketByPN(pn, NO_LOCK)
 		d := bucket.GetDepth()
 		if err != nil {
 			return false, err
