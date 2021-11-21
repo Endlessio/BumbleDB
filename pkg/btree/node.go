@@ -56,16 +56,16 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 	if idx < node.numKeys && node.getKeyAt(idx) == key {
 		if update {
 			node.updateValueAt(idx, value)
-			// node.unlockParent(true)
+			node.unlockParent(true)
 			return Split{}
 		} else {
-			// node.unlockParent(true)
+			node.unlockParent(true)
 			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
 		}
 	} else {
 		if update {
 			// fmt.Println("yes")
-			// node.unlockParent(true)
+			node.unlockParent(true)
 			return Split{err: errors.New("node/insertleaf: update non-exist")}
 		}
 		for i:=node.numKeys-1; i>=idx; i-- {
@@ -84,7 +84,7 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 		// defer node.unlockParent(true)
 		return res
 	} else {
-		// node.unlockParent(true)
+		node.unlockParent(true)
 		return Split{isSplit: false}
 	}
 }
@@ -232,20 +232,19 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 	index := node.search(key)
 	child, err := node.getChildAt(index, true)
 	if err != nil {
+		node.unlockParent(true)
 		return Split{err: errors.New("node/insert internal: get child error")}
 	}
 	node.initChild(child)
 	defer child.getPage().Put()
 	split_check := child.insert(key, value, update)
 	if split_check.isSplit {
-		node.unlock()
+		// node.unlock()
 		// defer node.unlockParent(true)
 		split_check = node.insertSplit(split_check)
-	} 
-	// else {
-	// 	// defer node.unlockParent(true)
-	// 	node.unlockParent(true)
-	// }
+	} else {
+		node.unlockParent(true)
+	}
 	return split_check
 }
 
