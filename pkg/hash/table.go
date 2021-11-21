@@ -171,7 +171,6 @@ func (table *HashTable) Insert(key int64, value int64) error {
 		return err
 	}
 	defer bucket.page.Put()
-	defer bucket.page.UnlockUpdates()
 	bucket.WLock()
 
 	split, err := bucket.Insert(key, value)
@@ -201,13 +200,12 @@ func (table *HashTable) Update(key int64, value int64) error {
 	/* SOLUTION {{{ */
 	table.RLock()
 	hash := Hasher(key, table.depth)
-	bucket, err := table.GetBucket(hash, READ_LOCK)
+	bucket, err := table.GetBucket(hash, WRITE_LOCK)
 	if err != nil {
 		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	defer bucket.page.UnlockUpdates()
 	bucket.WLock()
 	table.RUnlock()
 
@@ -222,13 +220,12 @@ func (table *HashTable) Delete(key int64) error {
 	/* SOLUTION {{{ */
 	table.RLock()
 	hash := Hasher(key, table.depth)
-	bucket, err := table.GetBucket(hash, READ_LOCK)
+	bucket, err := table.GetBucket(hash, WRITE_LOCK)
 	if err != nil {
 		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	defer bucket.page.UnlockUpdates()
 	bucket.WLock()
 	table.RUnlock()
 
