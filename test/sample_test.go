@@ -20,11 +20,11 @@ var DELAY_TIME = 5 * time.Millisecond
 var MAX_DELAY int64 = 10
 
 func TestConcurrencyTA(t *testing.T) {
-	// t.Run("TestTransactionBasic", testTransactionBasic)
-	// t.Run("TestTransactionDeadlock", testTransactionDeadlock)
-	// t.Run("TestDeadlockSimple", testDeadlockSimple)
-	// t.Run("TestDeadlockDAG", testDeadlockDAG)
-	// t.Run("TestConcurrentHashInsert", testConcurrentHashInsert)
+	t.Run("TestTransactionBasic", testTransactionBasic)
+	t.Run("TestTransactionDeadlock", testTransactionDeadlock)
+	t.Run("TestDeadlockSimple", testDeadlockSimple)
+	t.Run("TestDeadlockDAG", testDeadlockDAG)
+	t.Run("TestConcurrentHashInsert", testConcurrentHashInsert)
 	t.Run("TestConcurrentBTreeInsert", testConcurrentBTreeInsert)
 }
 

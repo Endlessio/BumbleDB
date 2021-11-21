@@ -81,21 +81,22 @@ func (table *HashTable) Find(key int64) (utils.Entry, error) {
 	// Get the corresponding bucket.
 	bucket, err := table.GetBucket(hash, READ_LOCK)
 	if err != nil {
+		// bucket.RUnlock()
 		table.RUnlock()
 		return nil, err
 	}
 	defer bucket.page.Put()
-	defer bucket.page.UnlockUpdates()
-	bucket.RLock()
+	// defer bucket.page.UnlockUpdates()
+	defer bucket.RUnlock()
 	table.RUnlock()
 
 	// Find the entry.
 	entry, found := bucket.Find(key)
 	if !found {
-		bucket.RUnlock()
+		// bucket.RUnlock()
 		return nil, errors.New("not found")
 	}
-	bucket.RUnlock()
+	// bucket.RUnlock()
 	return entry, nil
 }
 
@@ -168,30 +169,47 @@ func (table *HashTable) Insert(key int64, value int64) error {
 	bucket, err := table.GetBucket(hash, WRITE_LOCK)
 	if err != nil {
 		table.WUnlock()
+		bucket.WUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	bucket.WLock()
-
+	if bucket.numKeys+1<BUCKETSIZE {
+		table.WUnlock()
+	} else {
+		defer table.WUnlock()
+	}
+	defer bucket.WUnlock()
 	split, err := bucket.Insert(key, value)
 	if err != nil {
-		// unlock the bucket
-		table.WUnlock()
-		bucket.WUnlock()
 		return err
 	}
-	if !split {
-		// at this time, the table has been unlocked
-		// only unlock the bucket
-		bucket.WUnlock()
-		table.WUnlock()
-		return nil
+	if split {
+		err := table.Split(bucket, hash)
+		return err
 	}
+	return nil
 
-	// get here, it is the case of split, wanna make sure the recursion is done using defer
-	defer table.WUnlock()
-	defer bucket.WUnlock()
-	return table.Split(bucket, hash)
+	// bucket.WLock()
+
+	// split, err := bucket.Insert(key, value)
+	// if err != nil {
+	// 	// unlock the bucket
+	// 	table.WUnlock()
+	// 	bucket.WUnlock()
+	// 	return err
+	// }
+	// if !split {
+	// 	// at this time, the table has been unlocked
+	// 	// only unlock the bucket
+	// 	bucket.WUnlock()
+	// 	table.WUnlock()
+	// 	return nil
+	// }
+
+	// // get here, it is the case of split, wanna make sure the recursion is done using defer
+	// defer table.WUnlock()
+	// defer bucket.WUnlock()
+	// return table.Split(bucket, hash)
 	/* SOLUTION }}} */
 }
 
@@ -202,11 +220,12 @@ func (table *HashTable) Update(key int64, value int64) error {
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash, WRITE_LOCK)
 	if err != nil {
+		// bucket.WUnlock()
 		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	bucket.WLock()
+	// bucket.WLock()
 	table.RUnlock()
 
 	res := bucket.Update(key, value)
@@ -222,11 +241,12 @@ func (table *HashTable) Delete(key int64) error {
 	hash := Hasher(key, table.depth)
 	bucket, err := table.GetBucket(hash, WRITE_LOCK)
 	if err != nil {
+		bucket.WUnlock()
 		table.RUnlock()
 		return err
 	}
 	defer bucket.page.Put()
-	bucket.WLock()
+	// bucket.WLock()
 	table.RUnlock()
 
 	res:=bucket.Delete(key)
@@ -243,10 +263,11 @@ func (table *HashTable) Select() ([]utils.Entry, error) {
 	for i := int64(0); i < table.pager.GetNumPages(); i++ {
 		bucket, err := table.GetBucketByPN(i, READ_LOCK)
 		if err != nil {
+			bucket.RUnlock()
 			table.RUnlock()
 			return nil, err
 		}
-		bucket.RLock()
+		// bucket.RLock()
 		entries, err := bucket.Select()
 		bucket.GetPage().Put()
 		if err != nil {
@@ -292,6 +313,7 @@ func (table *HashTable) PrintPN(pn int, w io.Writer) {
 	}
 	bucket, err := table.GetBucketByPN(int64(pn), READ_LOCK)
 	if err != nil {
+		bucket.RUnlock()
 		return
 	}
 	bucket.RLock()

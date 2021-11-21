@@ -62,23 +62,23 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 			node.unlockParent(true)
 			return Split{err: errors.New("node/insertleaf: duplicated but not update")}
 		}
-	} else {
-		if update {
-			// fmt.Println("yes")
-			node.unlockParent(true)
-			return Split{err: errors.New("node/insertleaf: update non-exist")}
-		}
-		for i:=node.numKeys-1; i>=idx; i-- {
-			key_val := node.getKeyAt(i)
-			val_val := node.getValueAt(i)
-			node.updateKeyAt(i+1, key_val)
-			node.updateValueAt(i+1, val_val)
-		}
-		node.updateKeyAt(idx, key)
-		node.updateValueAt(idx, value)
-		// update number of keys
-		node.updateNumKeys(node.numKeys+1)
+	} 
+	if update {
+		// fmt.Println("yes")
+		node.unlockParent(true)
+		return Split{err: errors.New("node/insertleaf: update non-exist")}
 	}
+	for i:=node.numKeys-1; i>=idx; i-- {
+		key_val := node.getKeyAt(i)
+		val_val := node.getValueAt(i)
+		node.updateKeyAt(i+1, key_val)
+		node.updateValueAt(i+1, val_val)
+	}
+	node.updateKeyAt(idx, key)
+	node.updateValueAt(idx, value)
+	// update number of keys
+	node.updateNumKeys(node.numKeys+1)
+
 	if node.numKeys>ENTRIES_PER_LEAF_NODE {
 		res := node.split()
 		// defer node.unlockParent(true)
@@ -244,10 +244,13 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 		// defer node.unlockParent(true)
 		split_check = node.insertSplit(split_check)
 		if !split_check.isSplit {
+			// node.unlock()
 			node.unlockParent(true)
 		}
+		// node.unlock()
+		// return split_check
 	}
-	return split_check
+	return Split{isSplit: false, err: split_check.err}
 }
 
 // insertSplit inserts a split result into an internal node.
