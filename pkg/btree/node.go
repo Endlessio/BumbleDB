@@ -240,11 +240,10 @@ func (node *InternalNode) insert(key int64, value int64, update bool) Split {
 	defer child.getPage().Put()
 	split_check := child.insert(key, value, update)
 	if split_check.isSplit {
-		// node.unlock()
+		defer node.unlock()
 		// defer node.unlockParent(true)
 		split_check = node.insertSplit(split_check)
 		if !split_check.isSplit {
-			node.unlock()
 			node.unlockParent(true)
 		}
 	}
