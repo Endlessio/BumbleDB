@@ -91,22 +91,38 @@ func (node *LeafNode) insert(key int64, value int64, update bool) Split {
 
 // delete removes a given tuple from the leaf node, if the given key exists.
 func (node *LeafNode) delete(key int64) {
+	/* SOLUTION {{{ */
+	// Find entry.
 	node.unlockParent(true)
 	defer node.unlock()
-	ind := node.search(key)
-	// exist 
-	if ind < node.numKeys && node.getKeyAt(ind) == key{
-		for i:=int64(ind); i<=int64(node.numKeys)-2; i++{
-			key_val:=node.getKeyAt(i+1)
-			val_val:=node.getValueAt(i+1)
-			node.updateKeyAt(i, key_val)
-			node.updateValueAt(i, val_val)
-			// node.modifyCell(i, BTreeEntry{key: key_val, value: val_val})
-		}
-		node.updateNumKeys(node.numKeys-1)
-	} else {
+	deletePos := node.search(key)
+	if deletePos >= node.numKeys || node.getKeyAt(deletePos) != key {
+		// Thank you Mario! But our key is in another castle!
 		return
 	}
+	// Shift entries to the left.
+	for i := deletePos; i < node.numKeys-1; i++ {
+		node.updateKeyAt(i, node.getKeyAt(i+1))
+		node.updateValueAt(i, node.getValueAt(i+1))
+	}
+	node.updateNumKeys(node.numKeys - 1)
+	/* SOLUTION }}} */
+	// node.unlockParent(true)
+	// defer node.unlock()
+	// ind := node.search(key)
+	// // exist 
+	// if ind < node.numKeys && node.getKeyAt(ind) == key{
+	// 	for i:=int64(ind); i<=int64(node.numKeys)-2; i++{
+	// 		key_val:=node.getKeyAt(i+1)
+	// 		val_val:=node.getValueAt(i+1)
+	// 		node.updateKeyAt(i, key_val)
+	// 		node.updateValueAt(i, val_val)
+	// 		// node.modifyCell(i, BTreeEntry{key: key_val, value: val_val})
+	// 	}
+	// 	node.updateNumKeys(node.numKeys-1)
+	// } else {
+	// 	return
+	// }
 }
 
 // split is a helper function to split a leaf node, then propagate the split upwards.
