@@ -154,7 +154,12 @@ func (tm *TransactionManager) Unlock(clientId uuid.UUID, table db.Index, resourc
 			}
 			tm.tmMtx.RUnlock()
 			cur_tran.WLock()
-			delete(resrc_list, Resource{table.GetName(), resourceKey})
+			commit_err := tm.Commit(clientId)
+			if commit_err != nil {
+				cur_tran.WUnlock()
+				return commit_err
+			}
+			// delete(resrc_list, Resource{table.GetName(), resourceKey})
 			cur_tran.WUnlock()
 		} else {
 			tm.tmMtx.RUnlock()
