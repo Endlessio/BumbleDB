@@ -260,6 +260,8 @@ func (rm *RecoveryManager) Recover() error {
 				rm.Commit(txn_id)
 				rm.tm.Commit(txn_id)
 			}
+		case *checkpointLog:
+			rm.Undo(cur_log)
 		}
 	}
 	return nil
