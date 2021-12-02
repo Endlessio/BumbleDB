@@ -20,7 +20,7 @@ func (rm *RecoveryManager) getRelevantStrings() (
 	startTarget := []byte("start")
 	relevantStrings = make([]string, 0)
 	checkpointHit := false
-	txs := (map[uuid.UUID]bool)make
+	txs := make(map[uuid.UUID]bool);
 	for {
 		line, _, err := scanner.LineBytes()
 		if err != nil {
