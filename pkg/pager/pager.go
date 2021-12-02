@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"path/filepath"
 
 	config "github.com/brown-csci1270/db/pkg/config"
 	list "github.com/brown-csci1270/db/pkg/list"
@@ -60,7 +61,7 @@ func (pager *Pager) HasFile() bool {
 
 // GetFileName returns the file name.
 func (pager *Pager) GetFileName() string {
-	return pager.file.Name()
+	return filepath.Base(pager.file.Name())
 }
 
 // GetNumPages returns the number of pages.
