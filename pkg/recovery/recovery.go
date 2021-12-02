@@ -119,7 +119,7 @@ func (rm *RecoveryManager) Checkpoint() {
 		table.GetPager().FlushAllPages()
 		table.GetPager().UnlockAllUpdates()
 	}
-	for key := range rm.txStack {
+	for key := range rm.tm.GetTransactions() {
 		new_id_list = append(new_id_list, key)
 	}
 	new_check_log := checkpointLog{
@@ -218,11 +218,13 @@ func (rm *RecoveryManager) Recover() error {
 
 	// get active txn: read through transaction stack
 	active_txn := log_list[check_pos].(*checkpointLog).ids
+	active_map := make(map[uuid.UUID]bool)
 	for _, ele := range active_txn {
+		active_map[ele] = true
 		rm.tm.Begin(ele)
 	}
 
-	redo_map := make(map[uuid.UUID]int)
+	// redo_map := make(map[uuid.UUID]int)
 	// redo part
 	for i:=check_pos; i <len(log_list); i++ {
 		cur_log := log_list[i]
@@ -230,7 +232,13 @@ func (rm *RecoveryManager) Recover() error {
 		case *commitLog:
 			txn_id := cur_log.(*commitLog).id
 			rm.Redo(cur_log)
+			delete(active_map, txn_id)
 			rm.tm.Commit(txn_id)
+		case *startLog:
+			txn_id := cur_log.(*startLog).id
+			// add to begin also active_txn
+			active_map[txn_id] = true
+			rm.tm.Begin(txn_id)
 		default:
 			rm.Redo(cur_log)
 		}
@@ -241,27 +249,27 @@ func (rm *RecoveryManager) Recover() error {
 		switch cur_log.(type) {
 		case *editLog:
 			txn_id := cur_log.(*editLog).id
-			if _, ok := redo_map[txn_id]; !ok {
+			if _, ok := active_map[txn_id]; ok {
 				rm.Undo(cur_log)
 			}
 		case *commitLog:
-			txn_id := cur_log.(*commitLog).id
-			_, ok := redo_map[txn_id]
-			if ok {
-				return errors.New("recovery/Recovery: commit twice for same transaction")
-			} else {
-				redo_map[txn_id] = i
-			}
-			rm.Undo(cur_log)
+			// txn_id := cur_log.(*commitLog).id
+			// _, ok := redo_map[txn_id]
+			// if ok {
+			// 	return errors.New("recovery/Recovery: commit twice for same transaction")
+			// } else {
+			// 	redo_map[txn_id] = i
+			// }
+			// rm.Undo(cur_log)
 		case *startLog:
 			txn_id := cur_log.(*startLog).id
-			if _, ok := redo_map[txn_id]; !ok {
+			if _, ok := active_map[txn_id]; ok {
 				rm.Undo(cur_log)
 				rm.Commit(txn_id)
 				rm.tm.Commit(txn_id)
 			}
 		case *checkpointLog:
-			rm.Undo(cur_log)
+			// rm.Undo(cur_log)
 		}
 	}
 	return nil
