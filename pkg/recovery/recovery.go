@@ -207,8 +207,9 @@ func (rm *RecoveryManager) Undo(log Log) error {
 // Do a full recovery to the most recent checkpoint on startup.
 func (rm *RecoveryManager) Recover() error {
 	log_list, check_pos, err := rm.readLogs()
+	fmt.Println("log list len, check_pos:", len(log_list), check_pos)
 	if err != nil {
-		return errors.New("recovery/Recovery: err from readLogs!")
+		return errors.New("recovery/Recovery: err from readLogs")
 	}
 	// invalid check point, return err/nil?
 	if check_pos >= len(log_list) {
@@ -228,9 +229,11 @@ func (rm *RecoveryManager) Recover() error {
 		switch cur_log.(type) {
 		case *commitLog:
 			txn_id := cur_log.(*commitLog).id
+			rm.Redo(cur_log)
 			rm.tm.Commit(txn_id)
+		default:
+			rm.Redo(cur_log)
 		}
-		rm.Redo(cur_log)
 	}
 	// undo part uncommitted txns
 	for i:=len(log_list)-1; i>=0; i-- {
@@ -245,7 +248,7 @@ func (rm *RecoveryManager) Recover() error {
 			txn_id := cur_log.(*commitLog).id
 			_, ok := redo_map[txn_id]
 			if ok {
-				return errors.New("recovery/Recovery: commit twice for same transaction!")
+				return errors.New("recovery/Recovery: commit twice for same transaction")
 			} else {
 				redo_map[txn_id] = i
 			}
@@ -267,7 +270,7 @@ func (rm *RecoveryManager) Rollback(clientId uuid.UUID) error {
 	// panic("function not yet implemented");
 	txn_list, ok := rm.txStack[clientId]
 	if !ok {
-		return errors.New("recovery/Rollback: no target txn!")
+		return errors.New("recovery/Rollback: no target txn")
 	}
 	// check zero: 
 	if len(txn_list) == 0 {	
