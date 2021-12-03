@@ -67,17 +67,19 @@ func (rm *RecoveryManager) Edit(clientId uuid.UUID, table db.Index, action Actio
 	rm.mtx.Lock()
 	defer rm.mtx.Unlock()
 	new_edit_log := editLog{
-		id: clientId,
+		id:        clientId,
 		tablename: table.GetName(),
-		action: action,
-		key: key,
-		oldval: oldval,
-		newval: newval}
-	log_list, ok := rm.txStack[clientId]
-	if ok {
-		log_list = append(log_list, &new_edit_log)
-		// rm.txStack[clientId] = log_list
-	}
+		action:    action,
+		key:       key,
+		oldval:    oldval,
+		newval:    newval}
+	// log_list, ok := rm.txStack[clientId]
+	// if ok {
+	// 	log_list = append(log_list, &new_edit_log)
+	// 	// rm.txStack[clientId] = log_list
+	// }
+	rm.txStack[clientId] = append(rm.txStack[clientId], &new_edit_log)
+
 	rm.writeToBuffer(new_edit_log.toString())
 }
 
@@ -90,11 +92,13 @@ func (rm *RecoveryManager) Start(clientId uuid.UUID) {
 	rm.txStack[clientId] = new_txn
 	new_start_log := startLog{
 		id: clientId}
-	log_list, ok := rm.txStack[clientId]
-	if ok {
-		log_list = append(log_list, &new_start_log)
-		// rm.txStack[clientId] = log_list
-	}
+	// log_list, ok := rm.txStack[clientId]
+	// if ok {
+	// 	log_list = append(log_list, &new_start_log)
+	// 	// rm.txStack[clientId] = log_list
+	// }
+	rm.txStack[clientId] = append(rm.txStack[clientId], &new_start_log)
+
 	rm.writeToBuffer(new_start_log.toString())
 }
 
@@ -231,16 +235,11 @@ func (rm *RecoveryManager) Recover() error {
 
 	// redo_map := make(map[uuid.UUID]int)
 	// redo part
-	for i:=check_pos; i < len(log_list); i++ {
+	for i := check_pos; i < len(log_list); i++ {
 		cur_log := log_list[i]
 		switch cur_log.(type) {
 		case *commitLog:
 			txn_id := cur_log.(*commitLog).id
-			rm.Redo(cur_log)
-			// err := rm.Redo(cur_log)
-			// if err != nil {
-			// 	return err
-			// }
 			delete(active_map, txn_id)
 			err = rm.tm.Commit(txn_id)
 			if err != nil {
@@ -256,14 +255,11 @@ func (rm *RecoveryManager) Recover() error {
 			}
 		default:
 			rm.Redo(cur_log)
-			// err := rm.Redo(cur_log)
-			// if err != nil {
-			// 	return err
-			// }
+
 		}
 	}
 	// undo part uncommitted txns
-	for i:=len(log_list)-1; i>=0; i-- {
+	for i := len(log_list) - 1; i >= 0; i-- {
 		cur_log := log_list[i]
 		switch cur_log.(type) {
 		case *editLog:
@@ -275,18 +271,11 @@ func (rm *RecoveryManager) Recover() error {
 				}
 			}
 		case *commitLog:
-			// txn_id := cur_log.(*commitLog).id
-			// _, ok := redo_map[txn_id]
-			// if ok {
-			// 	return errors.New("recovery/Recovery: commit twice for same transaction")
-			// } else {
-			// 	redo_map[txn_id] = i
-			// }
-			// rm.Undo(cur_log)
+
 		case *startLog:
 			txn_id := cur_log.(*startLog).id
 			if _, ok := active_map[txn_id]; ok {
-				rm.Undo(cur_log)
+				// rm.Undo(cur_log)
 				// err := rm.Undo(cur_log)
 				// if err != nil {
 				// 	return err
@@ -296,6 +285,7 @@ func (rm *RecoveryManager) Recover() error {
 				if err != nil {
 					return err
 				}
+				// rm active
 			}
 		case *checkpointLog:
 			// rm.Undo(cur_log)
@@ -311,8 +301,8 @@ func (rm *RecoveryManager) Rollback(clientId uuid.UUID) error {
 	if !ok {
 		return errors.New("recovery/Rollback: no target txn")
 	}
-	// check zero: 
-	if len(txn_list) == 0 {	
+	// check zero:
+	if len(txn_list) == 0 {
 		rm.Commit(clientId)
 		rm.tm.Commit(clientId)
 	}
@@ -324,7 +314,7 @@ func (rm *RecoveryManager) Rollback(clientId uuid.UUID) error {
 		return errors.New("recovery/Rollback: invalid logs")
 	}
 	// just rollback
-	for i:=len(txn_list)-1; i>=0; i-- {
+	for i := len(txn_list) - 1; i >= 0; i-- {
 		cur_log := txn_list[i]
 		err := rm.Undo(cur_log)
 		if err != nil {
