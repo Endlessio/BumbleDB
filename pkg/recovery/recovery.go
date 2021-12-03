@@ -252,6 +252,11 @@ func (rm *RecoveryManager) Recover() error {
 			if err != nil {
 				return err
 			}
+		case *tableLog:
+			err := rm.Redo(cur_log)
+			if err != nil {
+				return err
+			}
 		case *editLog:
 			err := rm.Redo(cur_log)
 			if err != nil {
@@ -263,6 +268,9 @@ func (rm *RecoveryManager) Recover() error {
 	}
 	// undo part uncommitted txns
 	for i := len(log_list) - 1; i >= 0; i-- {
+		if len(active_map) == 0 {
+			break
+		}
 		cur_log := log_list[i]
 		switch cur_log.(type) {
 		case *editLog:
@@ -282,6 +290,7 @@ func (rm *RecoveryManager) Recover() error {
 					return err
 				}
 				// rm active
+				delete(active_map, txn_id)
 			}
 		default:
 			continue
@@ -301,6 +310,7 @@ func (rm *RecoveryManager) Rollback(clientId uuid.UUID) error {
 	if len(txn_list) == 0 {
 		rm.Commit(clientId)
 		rm.tm.Commit(clientId)
+		return nil
 	}
 	// check invalid: first is not start
 	first := txn_list[0]
@@ -310,7 +320,7 @@ func (rm *RecoveryManager) Rollback(clientId uuid.UUID) error {
 		return errors.New("recovery/Rollback: invalid logs")
 	}
 	// just rollback
-	for i := len(txn_list) - 1; i >= 0; i-- {
+	for i := len(txn_list) - 1; i > 0; i-- {
 		cur_log := txn_list[i]
 		err := rm.Undo(cur_log)
 		if err != nil {
