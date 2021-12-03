@@ -234,7 +234,7 @@ func (rm *RecoveryManager) Recover() error {
 		if err != nil {
 			return err
 		}
-	
+	}
 
 
 	// redo part
