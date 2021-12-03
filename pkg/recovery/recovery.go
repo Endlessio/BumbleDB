@@ -73,11 +73,7 @@ func (rm *RecoveryManager) Edit(clientId uuid.UUID, table db.Index, action Actio
 		key:       key,
 		oldval:    oldval,
 		newval:    newval}
-	// log_list, ok := rm.txStack[clientId]
-	// if ok {
-	// 	log_list = append(log_list, &new_edit_log)
-	// 	// rm.txStack[clientId] = log_list
-	// }
+
 	rm.txStack[clientId] = append(rm.txStack[clientId], &new_edit_log)
 
 	rm.writeToBuffer(new_edit_log.toString())
@@ -92,11 +88,7 @@ func (rm *RecoveryManager) Start(clientId uuid.UUID) {
 	rm.txStack[clientId] = new_txn
 	new_start_log := startLog{
 		id: clientId}
-	// log_list, ok := rm.txStack[clientId]
-	// if ok {
-	// 	log_list = append(log_list, &new_start_log)
-	// 	// rm.txStack[clientId] = log_list
-	// }
+
 	rm.txStack[clientId] = append(rm.txStack[clientId], &new_start_log)
 
 	rm.writeToBuffer(new_start_log.toString())
@@ -223,17 +215,27 @@ func (rm *RecoveryManager) Recover() error {
 	}
 
 	// get active txn: read through transaction stack
-	active_txn, ok := log_list[check_pos].(*checkpointLog)
+	// active_txn, ok := log_list[check_pos].(*checkpointLog)
+	// active_map := make(map[uuid.UUID]bool)
+	// if ok {
+	// 	for _, ele := range active_txn.ids {
+	// 		active_map[ele] = true
+	// 		err := rm.tm.Begin(ele)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
+	active_txn:= log_list[check_pos].(*checkpointLog).ids
 	active_map := make(map[uuid.UUID]bool)
-	if ok {
-		for _, ele := range active_txn.ids {
-			active_map[ele] = true
-			err := rm.tm.Begin(ele)
-			if err != nil {
-				return err
-			}
+	for _, ele := range active_txn {
+		active_map[ele] = true
+		err := rm.tm.Begin(ele)
+		if err != nil {
+			return err
 		}
-	}
+	
+
 
 	// redo part
 	for i := check_pos; i < len(log_list); i++ {
