@@ -234,10 +234,11 @@ func (rm *RecoveryManager) Recover() error {
 		switch cur_log.(type) {
 		case *commitLog:
 			txn_id := cur_log.(*commitLog).id
-			err := rm.Redo(cur_log)
-			if err != nil {
-				return err
-			}
+			rm.Redo(cur_log)
+			// err := rm.Redo(cur_log)
+			// if err != nil {
+			// 	return err
+			// }
 			delete(active_map, txn_id)
 			err = rm.tm.Commit(txn_id)
 			if err != nil {
@@ -252,10 +253,11 @@ func (rm *RecoveryManager) Recover() error {
 				return err
 			}
 		default:
-			err := rm.Redo(cur_log)
-			if err != nil {
-				return err
-			}
+			rm.Redo(cur_log)
+			// err := rm.Redo(cur_log)
+			// if err != nil {
+			// 	return err
+			// }
 		}
 	}
 	// undo part uncommitted txns
@@ -282,10 +284,11 @@ func (rm *RecoveryManager) Recover() error {
 		case *startLog:
 			txn_id := cur_log.(*startLog).id
 			if _, ok := active_map[txn_id]; ok {
-				err := rm.Undo(cur_log)
-				if err != nil {
-					return err
-				}
+				rm.Undo(cur_log)
+				// err := rm.Undo(cur_log)
+				// if err != nil {
+				// 	return err
+				// }
 				rm.Commit(txn_id)
 				err = rm.tm.Commit(txn_id)
 				if err != nil {
