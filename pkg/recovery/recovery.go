@@ -73,12 +73,12 @@ func (rm *RecoveryManager) Edit(clientId uuid.UUID, table db.Index, action Actio
 		key:       key,
 		oldval:    oldval,
 		newval:    newval}
-	// log_list, ok := rm.txStack[clientId]
-	// if ok {
-	// 	log_list = append(log_list, &new_edit_log)
-	// 	// rm.txStack[clientId] = log_list
-	// }
-	rm.txStack[clientId] = append(rm.txStack[clientId], &new_edit_log)
+	log_list, ok := rm.txStack[clientId]
+	if ok {
+		log_list = append(log_list, &new_edit_log)
+		// rm.txStack[clientId] = log_list
+	}
+	// rm.txStack[clientId] = append(rm.txStack[clientId], &new_edit_log)
 
 	rm.writeToBuffer(new_edit_log.toString())
 }
@@ -92,12 +92,12 @@ func (rm *RecoveryManager) Start(clientId uuid.UUID) {
 	rm.txStack[clientId] = new_txn
 	new_start_log := startLog{
 		id: clientId}
-	// log_list, ok := rm.txStack[clientId]
-	// if ok {
-	// 	log_list = append(log_list, &new_start_log)
-	// 	// rm.txStack[clientId] = log_list
-	// }
-	rm.txStack[clientId] = append(rm.txStack[clientId], &new_start_log)
+	log_list, ok := rm.txStack[clientId]
+	if ok {
+		log_list = append(log_list, &new_start_log)
+		// rm.txStack[clientId] = log_list
+	}
+	// rm.txStack[clientId] = append(rm.txStack[clientId], &new_start_log)
 
 	rm.writeToBuffer(new_start_log.toString())
 }
