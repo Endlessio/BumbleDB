@@ -76,6 +76,7 @@ func (rm *RecoveryManager) Edit(clientId uuid.UUID, table db.Index, action Actio
 	log_list, ok := rm.txStack[clientId]
 	if ok {
 		log_list = append(log_list, &new_edit_log)
+		rm.txStack[clientId] = log_list
 	}
 	rm.writeToBuffer(new_edit_log.toString())
 }
@@ -92,6 +93,7 @@ func (rm *RecoveryManager) Start(clientId uuid.UUID) {
 	log_list, ok := rm.txStack[clientId]
 	if ok {
 		log_list = append(log_list, &new_start_log)
+		rm.txStack[clientId] = log_list
 	}
 	rm.writeToBuffer(new_start_log.toString())
 }
