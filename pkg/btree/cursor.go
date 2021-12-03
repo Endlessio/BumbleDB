@@ -2,7 +2,6 @@ package btree
 
 import (
 	"errors"
-	"fmt"
 
 	utils "github.com/brown-csci1270/db/pkg/utils"
 )
@@ -15,10 +14,8 @@ type BTreeCursor struct {
 	curNode *LeafNode   // Current node.
 }
 
-
 // TableStart returns a cursor pointing to the first entry of the table.
 func (table *BTreeIndex) TableStart() (utils.Cursor, error) {
-	fmt.Println("btree/cursor/tablestart: using btree cursor")
 	cursor := BTreeCursor{table: table, cellnum: 0}
 	// Get the root page.
 	curPage, err := table.pager.GetPage(table.rootPN)
@@ -48,89 +45,86 @@ func (table *BTreeIndex) TableStart() (utils.Cursor, error) {
 // TableEnd returns a cursor pointing to the last entry in the db.
 // If the db is empty, returns a cursor to the new insertion position.
 func (table *BTreeIndex) TableEnd() (utils.Cursor, error) {
+	/* SOLUTION {{{ */
 	cursor := BTreeCursor{table: table, cellnum: 0}
 	// Get the root page.
 	curPage, err := table.pager.GetPage(table.rootPN)
 	if err != nil {
-		return nil, err
+		return &BTreeCursor{}, err
 	}
 	defer curPage.Put()
 	curHeader := pageToNodeHeader(curPage)
 	// Traverse the rightmost children until we reach a leaf node.
 	for curHeader.nodeType != LEAF_NODE {
 		curNode := pageToInternalNode(curPage)
-		rightmostPN := curNode.getPNAt(curNode.numKeys)
+		rightmostPN := curNode.getPNAt(curHeader.numKeys)
 		curPage, err = table.pager.GetPage(rightmostPN)
 		if err != nil {
-			return nil, err
+			return &BTreeCursor{}, err
 		}
 		defer curPage.Put()
 		curHeader = pageToNodeHeader(curPage)
 	}
 	// Set the cursor to point to the last entry in the rightmost leaf node.
 	rightmostNode := pageToLeafNode(curPage)
-	cursor.cellnum = rightmostNode.numKeys-1
-	cursor.isEnd = cursor.cellnum == rightmostNode.numKeys
+	cursor.isEnd = false
+	cursor.cellnum = rightmostNode.numKeys - 1
 	cursor.curNode = rightmostNode
 	return &cursor, nil
+	/* SOLUTION }}} */
 }
 
 // TableFind returns a cursor pointing to the given key.
 // If the key is not found, returns a cursor to the new insertion position.
 // Hint: use keyToNodeEntry
 func (table *BTreeIndex) TableFind(key int64) (utils.Cursor, error) {
-	cursor := BTreeCursor{table: table, cellnum: 0}
+	/* SOLUTION {{{ */
+	cursor := BTreeCursor{table: table}
 	// Get the root page.
-	curPage, err := table.pager.GetPage(table.rootPN)
+	rootPage, err := table.pager.GetPage(table.rootPN)
 	if err != nil {
-		return nil, err
+		return &BTreeCursor{}, err
 	}
-	defer curPage.Put()
-	var curNode Node
-	curHeader := pageToNodeHeader(curPage)
-	if curHeader.nodeType != LEAF_NODE {
-		curNode = pageToInternalNode(curPage)
-	} else {
-		curNode = pageToLeafNode(curPage)
+	defer rootPage.Put()
+	rootNode := pageToNode(rootPage)
+	// Find the leaf node and cellnum that this key belongs to.
+	leaf, cellnum, err := rootNode.keyToNodeEntry(key)
+	if err != nil {
+		return &BTreeCursor{}, err
 	}
-	node, key_pos, error := curNode.keyToNodeEntry(key)
-	// cannot find the key
-	if error != nil {
-		insert_pos := node.search(key)
-		cursor.cellnum = insert_pos
-		cursor.curNode = node
-		cursor.isEnd = (cursor.cellnum == node.numKeys)
-		return &cursor, nil
-	// find the key
-	} else {
-		cursor.cellnum = key_pos
-		cursor.curNode = node
-		cursor.isEnd = (cursor.cellnum == node.numKeys)
-		return &cursor, nil
-	}
+	// Initialize cursor.
+	cursor.cellnum = cellnum
+	cursor.isEnd = (cellnum == leaf.numKeys)
+	cursor.curNode = leaf
+	return &cursor, nil
+	/* SOLUTION }}} */
 }
 
 // TableFindRange returns a slice of Entries with keys between the startKey and endKey.
 func (table *BTreeIndex) TableFindRange(startKey int64, endKey int64) ([]utils.Entry, error) {
-	var res []utils.Entry
-	start_cursor, err1 := table.TableFind(startKey)
-	end_cursor, err2 := table.TableFind(endKey)
-	if err1 != nil {
-		return nil, errors.New("cursor/tablefindrange: cannot obtain start cursor")
+	/* SOLUTION {{{ */
+	// Initialize entries array, get starting cursor.
+	entries := make([]utils.Entry, 0)
+	cursor, err := table.TableFind(startKey)
+	if err != nil {
+		return entries, err
 	}
-	if err2 != nil {
-		return nil, errors.New("cursor/tablefindrange: cannot obtain end cursor")
+	// Keep advancing the cursor and adding the current entry to the list of
+	// entries until reaching the end key.
+	curEntry, err := cursor.GetEntry()
+	if err != nil {
+		return entries, err
 	}
-
-	for start_cursor != end_cursor && !start_cursor.IsEnd() {
-		cur_entry, get_entry_err := start_cursor.GetEntry()
-		if get_entry_err != nil {
-			res = append(res, nil)
+	for endKey > curEntry.GetKey() && !cursor.IsEnd() {
+		entries = append(entries, curEntry)
+		cursor.StepForward()
+		curEntry, err = cursor.GetEntry()
+		if err != nil {
+			return entries, err
 		}
-		res = append(res, cur_entry)
-		start_cursor.StepForward()
 	}
-	return res, nil
+	return entries, nil
+	/* SOLUTION }}} */
 }
 
 // stepForward moves the cursor ahead by one entry.

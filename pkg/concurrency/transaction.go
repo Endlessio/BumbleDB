@@ -90,86 +90,86 @@ func (tm *TransactionManager) Begin(clientId uuid.UUID) error {
 
 // Locks the given resource. Will return an error if deadlock is created.
 func (tm *TransactionManager) Lock(clientId uuid.UUID, table db.Index, resourceKey int64, lType LockType) error {
+	/* SOLUTION {{{ */
+	// Get the transaction we want, and construct the resource.
 	tm.tmMtx.RLock()
-	cur_tran, ok := tm.GetTransaction(clientId)
-	if !ok {
-		return errors.New("concurrency/transaction: clientId not find")
-	}
-	cur_tran.RLock()
-	resrc_list := cur_tran.GetResources()
-	// Check if the transaction has rights to the resource it is trying to lock
-	old_lock, exist := resrc_list[Resource{table.GetName(), resourceKey}]
-	if exist {
-		if old_lock == R_LOCK && lType == W_LOCK {
-			return errors.New("concurrency/transaction/lock: old read, new write")
-		}
-	}
-	cur_tran.RUnlock()
-	// Look for other transactions that might conflict with our transaction
-	conflict_list := tm.discoverTransactions(Resource{table.GetName(), resourceKey}, lType)
-	// If a conflicting transaction is found, add an edge to the precedence graph
-	for i:=0; i<len(conflict_list); i++ {
-		cur_conflict := conflict_list[i]
-		if cur_tran != cur_conflict {
-			tm.pGraph.AddEdge(cur_tran, cur_conflict)
-			defer tm.pGraph.RemoveEdge(cur_tran, cur_conflict)
-		}
-	}
-	// Check for deadlocks in the precedence graph
-	deadlock := tm.pGraph.DetectCycle()
-	if deadlock {
+	t, found := tm.GetTransaction(clientId)
+	if !found {
 		tm.tmMtx.RUnlock()
-		return errors.New("concurrency/transaction/lock: deadlock")
+		return errors.New("transaction not found")
 	}
-	// Add the resource to the transaction’s resource list and lock it
-	err := tm.lm.Lock(Resource{table.GetName(), resourceKey}, lType)
-	if err != nil {
-		return err
+	resource := Resource{tableName: table.GetName(), resourceKey: resourceKey}
+	// Check if we already have rights to the resource
+	t.RLock()
+	if curLockType, ok := t.resources[resource]; ok {
+		tm.tmMtx.RUnlock()
+		if curLockType == W_LOCK || curLockType == lType {
+			t.RUnlock()
+			return nil
+		}
+		t.RUnlock()
+		return errors.New("cannot upgrade to write lock in the middle of transaction")
 	}
+	t.RUnlock()
+	// Create a precedence graph, see if we create a cycle by locking this resource.
+	for _, tt := range tm.discoverTransactions(resource, lType) {
+		if t == tt {
+			continue
+		}
+		tm.pGraph.AddEdge(t, tt)
+		defer tm.pGraph.RemoveEdge(t, tt)
+	}
+	// If a deadlock, unlock and error.
+	if tm.pGraph.DetectCycle() {
+		tm.tmMtx.RUnlock()
+		return errors.New("deadlock detected")
+	}
+	// Else, lock the resource.
 	tm.tmMtx.RUnlock()
-	cur_tran.WLock()
-	resrc_list[Resource{table.GetName(), resourceKey}] = lType
-	cur_tran.WUnlock()
+	tm.lm.Lock(resource, lType)
+	t.WLock()
+	defer t.WUnlock()
+	t.resources[resource] = lType
 	return nil
+	/* SOLUTION }}} */
 }
 
 // Unlocks the given resource.
 func (tm *TransactionManager) Unlock(clientId uuid.UUID, table db.Index, resourceKey int64, lType LockType) error {
+	/* SOLUTION {{{ */
+	// Get the transaction we want, and construct the resource.
 	tm.tmMtx.RLock()
-	cur_tran, ok := tm.GetTransaction(clientId)
-	if !ok {
-		tm.tmMtx.RUnlock()
-		return errors.New("concurrency/transaction/unlock: clientId not find")
+	t, found := tm.GetTransaction(clientId)
+	tm.tmMtx.RUnlock()
+	if !found {
+		return errors.New("transaction not found")
 	}
-	cur_tran.RLock()
-	resrc_list := cur_tran.GetResources()
-	// find the transaction
-	old_lock, exist := resrc_list[Resource{table.GetName(), resourceKey}]
-	cur_tran.RUnlock()
-	if exist {
-		if old_lock == lType {
-			err := tm.lm.Unlock(Resource{table.GetName(), resourceKey}, lType)
-			if err != nil {
-				return err
-			}
-			tm.tmMtx.RUnlock()
-			cur_tran.WLock()
-			commit_err := tm.Commit(clientId)
-			if commit_err != nil {
-				cur_tran.WUnlock()
-				return commit_err
-			}
-			// delete(resrc_list, Resource{table.GetName(), resourceKey})
-			cur_tran.WUnlock()
-		} else {
-			tm.tmMtx.RUnlock()
-			return errors.New("concurrency/transaction/unlock: lock type not match")
+	resource := Resource{tableName: table.GetName(), resourceKey: resourceKey}
+	// Iterate through our locks to find the right one and remove it.
+	t.WLock()
+	defer t.WUnlock()
+	removed := false
+	for r, storedType := range t.resources {
+		if storedType != lType {
+			return errors.New("incorrect unlock type")
 		}
-	} else {
-		tm.tmMtx.RUnlock()
-		return errors.New("concurrency/transaction/unlock: the resource not find")
+		if r == resource {
+			removed = true
+			delete(t.resources, r)
+			break
+		}
+	}
+	// Error if no lock found.
+	if !removed {
+		return errors.New("resource not locked")
+	}
+	// Unlock the resource.
+	err := tm.lm.Unlock(resource, lType)
+	if err != nil {
+		return err
 	}
 	return nil
+	/* SOLUTION }}} */
 }
 
 // Commits the given transaction and removes it from the running transactions list.

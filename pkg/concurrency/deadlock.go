@@ -67,46 +67,34 @@ func (g *Graph) RemoveEdge(from *Transaction, to *Transaction) error {
 func (g *Graph) DetectCycle() bool {
 	g.RLock()
 	defer g.RUnlock()
-	seen := make([]*Transaction, 0)
-	for _, edge := range g.edges {
-		key := edge.from
-		if dfs(g,key,seen) {
+	/* SOLUTION {{{ */
+	// Get all transactions in the graph.
+	transactions := make([]*Transaction, 0)
+	seenT := make(map[*Transaction]bool)
+	for _, e := range g.edges {
+		if !seenT[e.from] {
+			transactions = append(transactions, e.from)
+			seenT[e.from] = true
+		}
+		if !seenT[e.to] {
+			transactions = append(transactions, e.to)
+			seenT[e.to] = true
+		}
+	}
+	// Construct union-find array.
+	parent := make([]int, len(transactions))
+	for i := range parent {
+		parent[i] = -1
+	}
+	// Iterate through edges, applying DFS.
+	for _, t := range transactions {
+		if dfs(g, t, make([]*Transaction, 0)) {
 			return true
 		}
 	}
 	return false
-	// g.RLock()
-	// defer g.RUnlock()
-	// edges := g.edges
-	// length := len(edges)
-	// trans := map[*Transaction]bool{}
-	// trans_list := make([]*Transaction, 0)
-	// parent_list := make([]int, 0)
-
-	// for i:=0; i<length; i++ {
-	// 	cur_edge := edges[i]
-	// 	_, ok1 := trans[cur_edge.from]
-	// 	_, ok2 := trans[cur_edge.to]
-	// 	if !ok1 {
-	// 		trans[cur_edge.from] = true
-	// 		trans_list = append(trans_list, cur_edge.from)
-	// 		parent_list = append(parent_list, -1)
-	// 	}
-	// 	if !ok2 {
-	// 		trans[cur_edge.to] = true
-	// 		trans_list = append(trans_list, cur_edge.to)
-	// 		parent_list = append(parent_list, -1)
-	// 	}
-	// 	from_tran := getIndex(trans_list, cur_edge.from)
-	// 	to_tran := getIndex(trans_list, cur_edge.to)
-	// 	_, exist := union(parent_list, from_tran, to_tran)
-	// 	if exist {
-	// 		return true
-	// 	} 
-	// }
-	// return false
+	/* SOLUTION }}} */
 }
-
 
 func dfs(g *Graph, from *Transaction, seen []*Transaction) bool {
 	// Go through each edge.
