@@ -221,7 +221,10 @@ func (rm *RecoveryManager) Recover() error {
 	active_map := make(map[uuid.UUID]bool)
 	for _, ele := range active_txn {
 		active_map[ele] = true
-		rm.tm.Begin(ele)
+		err := rm.tm.Begin(ele)
+		if err != nil {
+			return err
+		}
 	}
 
 	// redo_map := make(map[uuid.UUID]int)
@@ -236,12 +239,18 @@ func (rm *RecoveryManager) Recover() error {
 				return err
 			}
 			delete(active_map, txn_id)
-			rm.tm.Commit(txn_id)
+			err = rm.tm.Commit(txn_id)
+			if err != nil {
+				return err
+			}
 		case *startLog:
 			txn_id := cur_log.(*startLog).id
 			// add to begin also active_txn
 			active_map[txn_id] = true
-			rm.tm.Begin(txn_id)
+			err := rm.tm.Begin(txn_id)
+			if err != nil {
+				return err
+			}
 		default:
 			err := rm.Redo(cur_log)
 			if err != nil {
@@ -278,7 +287,10 @@ func (rm *RecoveryManager) Recover() error {
 					return err
 				}
 				rm.Commit(txn_id)
-				rm.tm.Commit(txn_id)
+				err = rm.tm.Commit(txn_id)
+				if err != nil {
+					return err
+				}
 			}
 		case *checkpointLog:
 			// rm.Undo(cur_log)
