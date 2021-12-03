@@ -125,8 +125,8 @@ func (rm *RecoveryManager) Checkpoint() {
 		table.GetPager().FlushAllPages()
 		table.GetPager().UnlockAllUpdates()
 	}
-	for key := range rm.tm.GetTransactions() {
-		new_id_list = append(new_id_list, key)
+	for _,tx := range rm.tm.GetTransactions() {
+		new_id_list = append(new_id_list, tx.GetClientID())
 	}
 	new_check_log := checkpointLog{
 		ids: new_id_list}
@@ -233,7 +233,6 @@ func (rm *RecoveryManager) Recover() error {
 		}
 	}
 
-	// redo_map := make(map[uuid.UUID]int)
 	// redo part
 	for i := check_pos; i < len(log_list); i++ {
 		cur_log := log_list[i]
@@ -253,9 +252,13 @@ func (rm *RecoveryManager) Recover() error {
 			if err != nil {
 				return err
 			}
+		case *editLog:
+			err := rm.Redo(cur_log)
+			if err != nil {
+				return err
+			}
 		default:
-			rm.Redo(cur_log)
-
+			continue
 		}
 	}
 	// undo part uncommitted txns
@@ -270,16 +273,9 @@ func (rm *RecoveryManager) Recover() error {
 					return err
 				}
 			}
-		case *commitLog:
-
 		case *startLog:
 			txn_id := cur_log.(*startLog).id
 			if _, ok := active_map[txn_id]; ok {
-				// rm.Undo(cur_log)
-				// err := rm.Undo(cur_log)
-				// if err != nil {
-				// 	return err
-				// }
 				rm.Commit(txn_id)
 				err = rm.tm.Commit(txn_id)
 				if err != nil {
@@ -287,8 +283,8 @@ func (rm *RecoveryManager) Recover() error {
 				}
 				// rm active
 			}
-		case *checkpointLog:
-			// rm.Undo(cur_log)
+		default:
+			continue
 		}
 	}
 	return nil
