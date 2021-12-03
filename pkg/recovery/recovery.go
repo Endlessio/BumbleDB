@@ -326,8 +326,14 @@ func (rm *RecoveryManager) Rollback(clientId uuid.UUID) error {
 	// just rollback
 	for i:=len(txn_list)-1; i>=0; i-- {
 		cur_log := txn_list[i]
-		rm.Undo(cur_log)
+		err := rm.Undo(cur_log)
+		if err != nil {
+			return err
+		}
 	}
+	rm.Commit(clientId)
+	rm.tm.Commit(clientId)
+
 	return nil
 }
 
