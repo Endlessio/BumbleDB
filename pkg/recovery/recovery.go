@@ -223,29 +223,31 @@ func (rm *RecoveryManager) Recover() error {
 	}
 
 	// get active txn: read through transaction stack
-	active_txn := log_list[check_pos].(*checkpointLog).ids
+	active_txn, ok := log_list[check_pos].(*checkpointLog)
 	active_map := make(map[uuid.UUID]bool)
-	for _, ele := range active_txn {
-		active_map[ele] = true
-		err := rm.tm.Begin(ele)
-		if err != nil {
-			return err
+	if ok {
+		for _, ele := range active_txn.ids {
+			active_map[ele] = true
+			err := rm.tm.Begin(ele)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	// redo part
 	for i := check_pos; i < len(log_list); i++ {
-		cur_log := log_list[i]
-		switch cur_log.(type) {
+		log := log_list[i]
+		switch cur_log := log.(type) {
 		case *commitLog:
-			txn_id := cur_log.(*commitLog).id
+			txn_id := cur_log.id
 			delete(active_map, txn_id)
 			err = rm.tm.Commit(txn_id)
 			if err != nil {
 				return err
 			}
 		case *startLog:
-			txn_id := cur_log.(*startLog).id
+			txn_id := cur_log.id
 			// add to begin also active_txn
 			active_map[txn_id] = true
 			err := rm.tm.Begin(txn_id)
@@ -271,10 +273,10 @@ func (rm *RecoveryManager) Recover() error {
 		if len(active_map) == 0 {
 			break
 		}
-		cur_log := log_list[i]
-		switch cur_log.(type) {
+		log := log_list[i]
+		switch cur_log := log.(type) {
 		case *editLog:
-			txn_id := cur_log.(*editLog).id
+			txn_id := cur_log.id
 			if _, ok := active_map[txn_id]; ok {
 				err := rm.Undo(cur_log)
 				if err != nil {
@@ -282,7 +284,7 @@ func (rm *RecoveryManager) Recover() error {
 				}
 			}
 		case *startLog:
-			txn_id := cur_log.(*startLog).id
+			txn_id := cur_log.id
 			if _, ok := active_map[txn_id]; ok {
 				rm.Commit(txn_id)
 				err = rm.tm.Commit(txn_id)
